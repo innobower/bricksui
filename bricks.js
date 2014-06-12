@@ -3,7 +3,7 @@
  * @copyright Copyright 2011-2014 Tilde Inc. and contributors
  * @license   Licensed under MIT license
  *            See https://raw.github.com/emberjs/ember.js/master/LICENSE
- * @version   1.7.0-beta.1+canary.f098877a
+ * @version   VERSION_STRING_PLACEHOLDER
  */
 
 (function() {
@@ -699,7 +699,7 @@ define("bricks-metal/core",
      *  Brics ,a widget library on ember.js
      *  @class Bricks
      *  @statis
-     *  @version 1.7.0-beta.1+canary.f098877a
+     *  @version VERSION_STRING_PLACEHOLDER
      */
     if ("undefined" === typeof Bricks) {
         Bricks = Ember.Namespace.create();
@@ -707,10 +707,10 @@ define("bricks-metal/core",
     /**
      @property VERSION
      @type String
-     @default '1.7.0-beta.1+canary.f098877a'
+     @default 'VERSION_STRING_PLACEHOLDER'
      @static
      */
-    Bricks.VERSION = '1.7.0-beta.1+canary.f098877a';
+    Bricks.VERSION = 'VERSION_STRING_PLACEHOLDER';
     
     var exports = this;
     
