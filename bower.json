@@ -1,1 +1,16 @@
-{"name":"bricksui","version":"0.0.1-beta.1+canary.03f8fc5b","homepage":"https://github.com/innobower/bricksui","authors":["jiangwy <294358991@qq.com>"],"license":"MIT","ignore":["**/.*","node_modules","bower_components","test","tests"]}
+{
+    "name": "bricksui",
+    "version": "0.0.1-beta.1+canary.03f8fc5b",
+    "homepage": "https://github.com/innobower/bricksui",
+    "authors": [
+        "jiangwy <294358991@qq.com>"
+    ],
+    "license": "MIT",
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "test",
+        "tests"
+    ]
+}
