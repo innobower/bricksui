@@ -83,63 +83,6 @@ define("bricks-form",
     Ember.EasyForm.Checkbox = Checkbox;
     Ember.EasyForm.Radio = Radio;
     Ember.RadioButton = RadioButton;
-
-
-    //-- Bootstrap 3 Class Names --------------------------------------------
-    //-- https://github.com/dockyard/ember-easyForm/issues/47
-    Ember.TextSupport.reopen({
-      classNames: ['form-control']
-    });
-
-    Ember.EasyForm.Config.registerWrapper('default', {
-      labelClass: 'control-label',
-      inputClass: 'form-group',
-      buttonClass: 'btn btn-primary',
-      fieldErrorClass: 'has-error',
-      errorClass: 'help-block'
-    });
-
-    var defaultsI18N = {
-      errors: {
-        inclusion: "is not included in the list",
-        exclusion: "is reserved",
-        invalid: "is invalid",
-        confirmation: "doesn't match {{attribute}}",
-        accepted: "must be accepted",
-        empty: "can't be empty",
-        blank: "can't be blank",
-        present: "must be blank",
-        tooLong: "is too long (maximum is {{count}} characters)",
-        tooShort: "is too short (minimum is {{count}} characters)",
-        wrongLength: "is the wrong length (should be {{count}} characters)",
-        notANumber: "is not a number",
-        notAnInteger: "must be an integer",
-        greaterThan: "must be greater than {{count}}",
-        greaterThanOrEqualTo: "must be greater than or equal to {{count}}",
-        equalTo: "must be equal to {{count}}",
-        lessThan: "must be less than {{count}}",
-        lessThanOrEqualTo: "must be less than or equal to {{count}}",
-        otherThan: "must be other than {{count}}",
-        odd: "must be odd",
-        even: "must be even",
-        url: "is not a valid URL"
-      }
-    };
-
-    /**
-     * 因为Ember-Validation代码判断当引入Ember-I18库时，将不会使用Validation自身的i18n模板
-     * 这段代码为Validation提供默认的错误提示
-     */
-    Ember.merge(Ember.I18n.translations, defaultsI18N);
-
-    /**
-     * @description 向I18N注册模板
-     * @param  {object} translation
-     */
-    Ember.I18n.registerTranslation = function (translation) {
-      Ember.assert('translation must be object ,you passed ' + translation, typeof translation === 'object');
-      Ember.merge(Ember.I18n.translations, translation);
-    };
   });
 define("bricks-form/bu-editor",
   ["exports"],
@@ -442,8 +385,12 @@ define("bricks-form/form-config",
   [],
   function() {
     "use strict";
-    //样式配置,默认提供两种,
-    Ember.EasyForm.Config.registerWrapper('bootstrap', {
+    /**
+     * @description bootstrap横排样式
+     * 布局分隔为100%撑满，
+     * Label在input左方，验证信息在input下方
+     */
+    Ember.EasyForm.Config.registerWrapper('bootstrap-horizontal', {
         inputTemplate: 'bootstrap-input',
         checkboxTemplate: "bootstrap-checkbox",
         radioTemplate: "bootstrap-radio",
@@ -456,6 +403,23 @@ define("bricks-form/form-config",
         inputClass: 'form-group',
         buttonClass: 'btn btn-primary'
     });
+
+    /**
+     * @description bootstrap默认样式
+     * 布局分隔为100%撑满，
+     * Label在input上方，验证信息在input下方
+     */
+    Ember.EasyForm.Config.registerWrapper('bootstrap', {
+      checkboxTemplate: "bootstrap-checkbox",
+      radioTemplate: "bootstrap-radio",
+      labelClass: 'control-label',
+      inputClass: 'form-group',
+      buttonClass: 'btn btn-primary',
+      fieldErrorClass: 'has-error',
+      errorClass: 'help-block'
+    });
+
+
     //禁用submit 按钮的默认disabled属性
     //TODO 改用样式控制
     Ember.EasyForm.Submit.reopen({
@@ -671,6 +635,68 @@ define("bricks-form/radio",
     });
 
     __exports__["default"] = Radio;
+  });
+define("bricks-i18n",
+  ["bricks-i18n/i18n-support"],
+  function(__dependency1__) {
+    "use strict";
+
+  });
+define("bricks-i18n/i18n-support",
+  [],
+  function() {
+    "use strict";
+    var defaultsI18N = {
+      errors: {
+        inclusion: "is not included in the list",
+        exclusion: "is reserved",
+        invalid: "is invalid",
+        confirmation: "doesn't match {{attribute}}",
+        accepted: "must be accepted",
+        empty: "can't be empty",
+        blank: "can't be blank",
+        present: "must be blank",
+        tooLong: "is too long (maximum is {{count}} characters)",
+        tooShort: "is too short (minimum is {{count}} characters)",
+        wrongLength: "is the wrong length (should be {{count}} characters)",
+        notANumber: "is not a number",
+        notAnInteger: "must be an integer",
+        greaterThan: "must be greater than {{count}}",
+        greaterThanOrEqualTo: "must be greater than or equal to {{count}}",
+        equalTo: "must be equal to {{count}}",
+        lessThan: "must be less than {{count}}",
+        lessThanOrEqualTo: "must be less than or equal to {{count}}",
+        otherThan: "must be other than {{count}}",
+        odd: "must be odd",
+        even: "must be even",
+        url: "is not a valid URL"
+      }
+    };
+
+    /**
+     * 因为Ember-Validation代码判断当引入Ember-I18库时，将不会使用Validation自身的i18n模板
+     * 这段代码为Validation提供默认的错误提示
+     */
+    Ember.merge(Ember.I18n.translations, defaultsI18N);
+
+    /**
+     * @description 向I18N注册模板
+     * @param  {object} translation
+     */
+    Ember.I18n.registerTranslation = function (translation) {
+      Ember.assert('translation must be an object ,you passed ' + translation, typeof translation === 'object');
+      Ember.merge(Ember.I18n.translations, translation);
+    };
+
+
+    Ember.I18n.getLanguage=function(){
+      return window.navigator.language;
+    };
+
+    Ember.I18n.setLanguage=function(lang){
+      //TODO 加载language文件
+      Ember.$.cookie('bricks-lang',lang, { expires: 7 });
+    };
   });
 define("bricks-metal",
   ["bricks-metal/core","bricks-metal/event_manager","bricks-metal/state_handler","bricks-metal/stateable"],
@@ -1230,14 +1256,14 @@ define("bricks-metal/view",
     __exports__.View = View;
   });
 define("bricks",
-  ["bricks-metal","bricks-form"],
-  function(__dependency1__, __dependency2__) {
+  ["bricks-metal","bricks-form","bricks-i18n"],
+  function(__dependency1__, __dependency2__, __dependency3__) {
     "use strict";
     /**
      * @description 构建主入口文件
      */
   });
-Ember.TEMPLATES['checkbox-group'] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
+Ember.TEMPLATES['bootstrap-checkbox'] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
 this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
   var buffer = '', stack1, helper, options, escapeExpression=this.escapeExpression, helperMissing=helpers.helperMissing, self=this;
@@ -1300,20 +1326,7 @@ function program5(depth0,data) {
   
 });
 
-Ember.TEMPLATES['components/bu-editor'] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
-this.compilerInfo = [4,'>= 1.0.0'];
-helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
-  var buffer = '', escapeExpression=this.escapeExpression;
-
-
-  data.buffer.push("<textarea id=\"");
-  data.buffer.push(escapeExpression(helpers.unbound.call(depth0, "holderId", {hash:{},hashTypes:{},hashContexts:{},contexts:[depth0],types:["ID"],data:data})));
-  data.buffer.push("\"></textarea>");
-  return buffer;
-  
-});
-
-Ember.TEMPLATES['input'] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
+Ember.TEMPLATES['bootstrap-input'] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
 this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
   var buffer = '', helper, options, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
@@ -1332,7 +1345,7 @@ helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
   
 });
 
-Ember.TEMPLATES['radio-group'] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
+Ember.TEMPLATES['bootstrap-radio'] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
 this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
   var buffer = '', stack1, helper, options, escapeExpression=this.escapeExpression, helperMissing=helpers.helperMissing, self=this;
@@ -1394,6 +1407,19 @@ function program5(depth0,data) {
   stack1 = helpers['if'].call(depth0, "view.hint", {hash:{},hashTypes:{},hashContexts:{},inverse:self.noop,fn:self.program(5, program5, data),contexts:[depth0],types:["ID"],data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
   data.buffer.push("\n</div>");
+  return buffer;
+  
+});
+
+Ember.TEMPLATES['components/bu-editor'] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
+this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
+  var buffer = '', escapeExpression=this.escapeExpression;
+
+
+  data.buffer.push("<textarea id=\"");
+  data.buffer.push(escapeExpression(helpers.unbound.call(depth0, "holderId", {hash:{},hashTypes:{},hashContexts:{},contexts:[depth0],types:["ID"],data:data})));
+  data.buffer.push("\"></textarea>");
   return buffer;
   
 });
