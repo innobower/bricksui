@@ -3,7 +3,7 @@
  * @copyright Copyright 2014-2014 Tilde Inc. and contributors
  * @license   Licensed under MIT license
  *            See https://raw.github.com/innobricks/bricksui/master/LICENSE
- * @version   0.0.1-beta.1+canary.38d909b2
+ * @version   0.0.1-beta.1+canary.c41856cc
  */
 
 (function() {
@@ -678,17 +678,21 @@ define("bricksui-i18n",
 
     var translationHelper = __dependency7__.translationHelper;
     /**
-     @module BricksUI
-     @submodule BricksUI-I18n
+     @module bricksui
+     @submodule bricks-i18n
      @description 国际化支持
      */
     /**
      * @class I18n
      * @namespace BricksUI
-     * @type {{}}
+     * @type {Object}
      */
     var I18n = {};
-
+    /**
+     * @module bricksui-i18n
+     * @submodule bricks-i18n-lang
+     * @type {Object}
+     */
     I18n.lang = {};
 
     /**
@@ -696,6 +700,7 @@ define("bricksui-i18n",
      * de :de-dk de-ch de-lu
      * zh-cn : zh-cn
      * zh-tw : zh-tw
+     *  @default "zh-cn"
      */
     I18n.lang['en'] = en;
     I18n.lang['zh-cn'] = zhCN;
@@ -1018,7 +1023,7 @@ define("bricksui-metal/core",
      *  BricksUI ,a widget library on ember.js
      *  @class BricksUI
      *  @statis
-     *  @version 0.0.1-beta.1+canary.38d909b2
+     *  @version 0.0.1-beta.1+canary.c41856cc
      */
     if ("undefined" === typeof BricksUI) {
       BricksUI = Ember.Namespace.create();
@@ -1026,10 +1031,10 @@ define("bricksui-metal/core",
     /**
      @property VERSION
      @type String
-     @default '0.0.1-beta.1+canary.38d909b2'
+     @default '0.0.1-beta.1+canary.c41856cc'
      @static
      */
-    BricksUI.VERSION = '0.0.1-beta.1+canary.38d909b2';
+    BricksUI.VERSION = '0.0.1-beta.1+canary.c41856cc';
     
     var DEFAULT_ENV = {
       /**
