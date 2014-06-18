@@ -689,6 +689,7 @@ define("bricksui-i18n",
      */
     var I18n = {};
     /**
+     * I18n lang locale package
      * @module bricksui-i18n
      * @submodule bricks-i18n-lang
      * @type {Object}
