@@ -1,9 +1,9 @@
 /*!
  * @overview  Bricks - a widget library based on Ember
- * @copyright Copyright 2011-2014 Tilde Inc. and contributors
+ * @copyright Copyright 2014-2014 Tilde Inc. and contributors
  * @license   Licensed under MIT license
- *            See https://raw.github.com/emberjs/ember.js/master/LICENSE
- * @version   VERSION_STRING_PLACEHOLDER
+ *            See https://raw.github.com/innobricks/bricksui/master/LICENSE
+ * @version   0.0.1-beta.1+canary.38d909b2
  */
 
 (function() {
@@ -157,7 +157,9 @@ define("bricksui-form/bu-editor",
        @type String
        @default bu-editor+父级ID编号
        */
-      holderId: 'bu-editor' + this.elementId,
+      holderId: function () {
+        return 'bu-editor' + Ember.get(this, 'elementId');
+      }.property('elementId'),
 
       /**
        为UMeditor添加事件监听
@@ -171,7 +173,7 @@ define("bricksui-form/bu-editor",
           var value = get(this, 'value');
           if (!Ember.isEmpty(value)) editor.setContent(value);
 
-          this.$('.edui-container').css({width:'100%'});
+          this.$('.edui-container').css({width: '100%'});
 
         }.bind(this));
 
@@ -213,7 +215,7 @@ define("bricksui-form/bu-editor",
         //TODO toolbar属性合并
         options = $.extend(true, {}, options, defaultOptions);
 
-        editor = this._editor = UM.getEditor(this.holderId, options);
+        editor = this._editor = UM.getEditor(this.get('holderId'), options);
 
         this._attachEvent(editor);
       }.on('didInsertElement'),
@@ -282,6 +284,14 @@ define("bricksui-form/chosen-select",
       init:function(){
         this._super();
         this.set('prompt',' ');  //对于chosen组件，需要存在一个为空的promt
+
+        //once elements trigger blur event,the parentView will show validated result,
+        //aim to defer validation
+        var parentView=this.get('parentView');
+        parentView.focusOut=function(){
+          parentView.set(parentView.set('hasFocusedOut', true));
+        };
+
       },
 
       /**
@@ -304,7 +314,7 @@ define("bricksui-form/chosen-select",
       }.observes('content.@each'),
 
       _doShowFocus:function(){
-        this.get('parentView').focusOut();
+        this.get('parentView').showValidationError();
       },
 
       _validation:function(){
@@ -319,13 +329,11 @@ define("bricksui-form/chosen-select",
       _updateDom:function(){
 
         Ember.run.scheduleOnce('afterRender',this,function(){
-
           //在select视图渲染成成后，将其转换为chosen下拉框，并监听change事件
           this.$().chosen()
-            .change(function(){
+            .on('change chosen:hiding_dropdown',function(){
               //为了取得数组正确的变化，将validate推迟到下一生命周期运行
               Ember.run.next(this,'_validation');
-
             }.bind(this))
           ;
         });
@@ -401,7 +409,8 @@ define("bricksui-form/form-config",
         hintClass: 'help-block',
         labelClass: 'col-sm-3 control-label',
         inputClass: 'form-group',
-        buttonClass: 'btn btn-primary'
+        buttonClass: 'btn btn-primary',
+        validationLayout:'bootstrap-validation-input'
     });
 
     /**
@@ -416,7 +425,8 @@ define("bricksui-form/form-config",
       inputClass: 'form-group',
       buttonClass: 'btn btn-primary',
       fieldErrorClass: 'has-error',
-      errorClass: 'help-block'
+      errorClass: 'help-block',
+      validationLayout:'validation-layout'
     });
 
 
@@ -450,6 +460,18 @@ define("bricksui-form/form-config",
     });
     Ember.EasyForm.TextArea.reopen({
         classNames: ["form-control"]
+    });
+
+    /**
+     * @description 拓展校验字段
+     */
+    Ember.EasyForm.Input.reopen({
+      init:function(){
+        this._super();
+        if(this.isBlock && this.get('withValidation')){
+          this.set('layoutName',this.get('wrapperConfig.validationLayout'));
+        }
+      }
     });
   });
 define("bricksui-form/form-setup",
@@ -624,10 +646,12 @@ define("bricksui-form/radio-button",
     __exports__["default"] = RadioButton;
   });
 define("bricksui-form/radio",
-  ["exports"],
-  function(__exports__) {
+  ["./checkbox","exports"],
+  function(__dependency1__, __exports__) {
     "use strict";
-    var Radio = Ember.EasyForm.Checkbox.extend({
+    var Checkbox = __dependency1__["default"];
+
+    var Radio = Checkbox.extend({
         init: function () {
             this._super.apply(this, arguments);
             this.set('templateName', this.get('wrapperConfig.radioTemplate'));
@@ -637,16 +661,277 @@ define("bricksui-form/radio",
     __exports__["default"] = Radio;
   });
 define("bricksui-i18n",
-  ["bricksui-i18n/i18n-support"],
-  function(__dependency1__) {
+  ["bricksui-metal/core","bricksui-i18n/initializer","bricksui-i18n/i18n-support","bricksui-i18n/i18n-validator","bricksui-i18n/lang/en","bricksui-i18n/lang/zh-cn","bricksui-i18n/helpers/translation"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__) {
     "use strict";
+    var BricksUI = __dependency1__["default"];
 
+    var setLang = __dependency3__.setLang;
+    var i18nValidator = __dependency4__["default"];
+
+    //BEGIN IMPORT LANGUAGE
+    var en = __dependency5__["default"];
+    var zhCN = __dependency6__["default"];
+
+    //END IMPORT LANGUAGE
+
+
+    var translationHelper = __dependency7__.translationHelper;
+    /**
+     @module BricksUI
+     @submodule BricksUI-I18n
+     @description 国际化支持
+     */
+    /**
+     * @class I18n
+     * @namespace BricksUI
+     * @type {{}}
+     */
+    var I18n = {};
+
+    I18n.lang = {};
+
+    /**
+     * en :en-us en-hk en-au
+     * de :de-dk de-ch de-lu
+     * zh-cn : zh-cn
+     * zh-tw : zh-tw
+     */
+    I18n.lang['en'] = en;
+    I18n.lang['zh-cn'] = zhCN;
+
+    I18n.I18nableValidationMixin = i18nValidator;
+
+    I18n.setLang = setLang;
+
+    Handlebars.registerHelper("t", translationHelper);
+
+
+    BricksUI.I18n = I18n;
+  });
+define("bricksui-i18n/helpers/translation",
+  ["bricksui-metal/core","exports"],
+  function(__dependency1__, __exports__) {
+    "use strict";
+    var BricksUI = __dependency1__["default"];
+
+    var I18n = BricksUI.I18n;
+    var isBinding = /(.+)Binding$/,
+        uniqueElementId = (function () {
+            var id = Ember.uuid || 0;
+            return function () {
+                var elementId = 'i18n-' + id++;
+                return elementId;
+            };
+        })();
+    var get = Ember.get,
+        EmHandlebars = Ember.Handlebars
+        ;
+    __exports__["default"] = function (key, options) {
+        var attrs, context, data, elementID, result, tagName, view;
+        context = this;
+        attrs = options.hash;
+        data = options.data;
+        view = data.view;
+        tagName = attrs.tagName || 'span';
+        delete attrs.tagName;
+        elementID = uniqueElementId();
+
+        Ember.keys(attrs).forEach(function (property) {
+            var bindPath, currentValue, invoker, isBindingMatch, normalized, normalizedPath, observer, propertyName, root, _ref;
+            isBindingMatch = property.match(isBinding);
+
+            if (isBindingMatch) {
+                propertyName = isBindingMatch[1];
+                bindPath = attrs[property];
+                currentValue = get(context, bindPath, options);
+                attrs[propertyName] = currentValue;
+                invoker = null;
+                normalized = EmHandlebars.normalizePath(context, bindPath, data);
+                _ref = [normalized.root, normalized.path], root = _ref[0], normalizedPath = _ref[1];
+
+                observer = function () {
+                    var elem, newValue;
+                    if (view.$() == null) {
+                        Ember.removeObserver(root, normalizedPath, invoker);
+                        return;
+                    }
+                    newValue = get(context, bindPath, options);
+                    elem = view.$("#" + elementID);
+                    attrs[propertyName] = newValue;
+                    return elem.html(I18n.t(key, attrs));
+                };
+                Ember.subscribe("i18nChange", {
+                    after: observer
+                });
+
+                invoker = function () {
+                    Ember.run.scheduleOnce('afterRender', observer);
+                };
+
+                return Ember.addObserver(root, normalizedPath, invoker);
+            }
+        });
+        var observer = function () {
+            var elem;
+            elem = view.$("#" + elementID);
+            return elem.html(I18n.t(key, attrs));
+        };
+        Ember.subscribe("i18nChange", {
+            after: observer
+        });
+        result = '<%@ id="%@">%@</%@>'.fmt(tagName, elementID, I18n.t(key, attrs), tagName);
+        return new EmHandlebars.SafeString(result);
+    }
   });
 define("bricksui-i18n/i18n-support",
-  [],
-  function() {
+  ["bricksui-metal/core","exports"],
+  function(__dependency1__, __exports__) {
     "use strict";
-    var defaultsI18N = {
+    var BricksUI = __dependency1__["default"];
+
+    var langKey = "bricksui-lang";
+
+    var loadLang = function () {
+        try {
+            return JSON.parse(Ember.$.cookie(langKey));
+        } catch (e) {
+            return null;
+        }
+    };
+
+    var parseLanguage = function () {
+        var language = (window.navigator.language || window.navigator.browserLanguage).toLowerCase(),
+            match
+            ;
+        match = language.match(/(.*)-(.*)/);
+        return {
+            fullName: match[0],
+            language: match[1],
+            area: match[2]
+        };
+    };
+    var requireLang = function (parsedName) {
+        var require = window.require;
+        if (typeof parsedName === "string") {
+            parsedName = {
+                language: parsedName
+            };
+        }
+        var localeLang = require([BricksUI.ENV.MODULE_PREFIX, BricksUI.ENV.LANG_FOLDER_NAME, parsedName.language].join("/"));
+        var localeName = parsedName.language;
+        if (!localeLang) {
+            localeLang = require([BricksUI.ENV.MODULE_PREFIX, BricksUI.ENV.LANG_FOLDER_NAME, parsedName.fullName].join("/"));
+            localeName = parsedName.fullName;
+        }
+        if (localeLang && localeLang['default']) {
+            localeLang = localeLang['default'];
+        }
+
+        return {
+            localeName: localeName,
+            localeLang: localeLang
+        };
+    };
+    var saveLang = function (lang) {
+        if (BricksUI.ENV.PERSISTENT_I18N) {
+            Ember.$.cookie(langKey, JSON.stringify(lang), { expires: 7 });
+        }
+    };
+    var mergeLang = function (locale) {
+        var localeName = locale.localeName;
+        var localeLang = locale.localeLang;
+        var bricksLocale = BricksUI.I18n.lang[localeName];
+        Ember.$.extend(true, bricksLocale, localeLang);
+        Ember.$.extend(true, Ember.I18n.translations, bricksLocale);
+    };
+    var initLang = function () {
+        var parsedName;
+        if (BricksUI.ENV.PERSISTENT_I18N) {
+            parsedName = loadLang() || parseLanguage();
+        }
+        var locale = requireLang(parsedName);
+        mergeLang(locale);
+        saveLang(parsedName);
+    };
+    /**
+     * 语言切换,用户可以通过传入的语言标识符进行语言切换
+     * 需要在对应的项目下有对应的语言包
+     * app
+     *      lang
+     *          en.js
+     *          zh-cn.js
+     *  传入的标识符即为lang下的对应的文件名
+     * @method setLang
+     * @for BricksUI.I18n
+     * @param {String} lang language string ,"en" "zh-cn"
+     */
+    var setLang = function (lang) {
+        var locale = requireLang(lang);
+        mergeLang(locale);
+        saveLang({
+            fullName: lang,
+            language: lang,
+            area: lang
+        });
+
+        var translations = Ember.I18n.translations;
+        for (var prop in translations) {
+            if (Ember.canInvoke(translations, prop)) {
+                delete translations[prop];
+            }
+        }
+        Ember.instrument("i18nChange");
+    };
+
+    __exports__.initLang = initLang;
+    __exports__.setLang = setLang;
+  });
+define("bricksui-i18n/i18n-validator",
+  ["exports"],
+  function(__exports__) {
+    "use strict";
+    /**
+     * @description 继承自Ember-Validations,拓展语言切换支持。通过该方法可做到即时的语言切换，缺点在于很难与默认的t.i18n进行交互
+     * 该方法订阅 'i18nChange' 事件，在事件触发后，调用自身 validate方法
+     */
+    var I18nableValidationMixin = Ember.Mixin.create(Ember.Validations.Mixin,{
+      init: function () {
+        this._super();
+
+        var validatorMixin = this;
+        Ember.subscribe("i18nChange", {
+          after: function (name, timestamp, payload) {
+            validatorMixin.validate();
+          }
+        });
+      }
+    });
+    __exports__["default"] = I18nableValidationMixin;
+  });
+define("bricksui-i18n/initializer",
+  ["bricksui-metal/core","./i18n-support"],
+  function(__dependency1__, __dependency2__) {
+    "use strict";
+    var BricksUI = __dependency1__["default"];
+    var initLang = __dependency2__.initLang;
+
+    Ember.onLoad("Ember.Application", function (Application) {
+
+        Application.initializer({
+            name: "i18n-setup",
+            initialize: function (container, application) {
+                BricksUI.ENV.MODULE_PREFIX = application.modulePrefix;
+                initLang();
+            }
+        });
+    });
+  });
+define("bricksui-i18n/lang/en",
+  ["exports"],
+  function(__exports__) {
+    "use strict";
+    var en = {
       errors: {
         inclusion: "is not included in the list",
         exclusion: "is reserved",
@@ -672,31 +957,39 @@ define("bricksui-i18n/i18n-support",
         url: "is not a valid URL"
       }
     };
-
-    /**
-     * 因为Ember-Validation代码判断当引入Ember-I18库时，将不会使用Validation自身的i18n模板
-     * 这段代码为Validation提供默认的错误提示
-     */
-    Ember.merge(Ember.I18n.translations, defaultsI18N);
-
-    /**
-     * @description 向I18N注册模板
-     * @param  {object} translation
-     */
-    Ember.I18n.registerTranslation = function (translation) {
-      Ember.assert('translation must be an object ,you passed ' + translation, typeof translation === 'object');
-      Ember.merge(Ember.I18n.translations, translation);
+    __exports__["default"] = en;
+  });
+define("bricksui-i18n/lang/zh-cn",
+  ["exports"],
+  function(__exports__) {
+    "use strict";
+    var zhCN = {
+      errors: {
+        inclusion: "is not included in the list",
+        exclusion: "is reserved",
+        invalid: "is invalid",
+        confirmation: "不匹配 {{attribute}}",
+        accepted: "必须接受",
+        empty: "输入不可为空",
+        blank: "输入不可为空",
+        present: "输入不可为空",
+        tooLong: "长度错误 (最大值为 {{count}} 字符)",
+        tooShort: "长度错误 (最小为 {{count}} 字符)",
+        wrongLength: "长度错误 (必须为 {{count}} 字符)",
+        notANumber: "请输入数值",
+        notAnInteger: "请输入整数",
+        greaterThan: "输入值必须大于 {{count}}",
+        greaterThanOrEqualTo: "输入值必须不小于 {{count}}",
+        equalTo: "输入值必须等于 {{count}}",
+        lessThan: "输入值必须小于 {{count}}",
+        lessThanOrEqualTo: "输入值必须不大于 {{count}}",
+        otherThan: "请输入不同的值 {{count}}",
+        odd: "请输入奇数",
+        even: "请输入偶数",
+        url: "请输入正确的URL地址"
+      }
     };
-
-
-    Ember.I18n.getLanguage=function(){
-      return window.navigator.language;
-    };
-
-    Ember.I18n.setLanguage=function(lang){
-      //TODO 加载language文件
-      Ember.$.cookie('bricksui-lang',lang, { expires: 7 });
-    };
+    __exports__["default"] = zhCN;
   });
 define("bricksui-metal",
   ["bricksui-metal/core","bricksui-metal/event_manager","bricksui-metal/state_handler","bricksui-metal/stateable"],
@@ -725,23 +1018,40 @@ define("bricksui-metal/core",
      *  BricksUI ,a widget library on ember.js
      *  @class BricksUI
      *  @statis
-     *  @version VERSION_STRING_PLACEHOLDER
+     *  @version 0.0.1-beta.1+canary.38d909b2
      */
     if ("undefined" === typeof BricksUI) {
-        BricksUI = Ember.Namespace.create();
+      BricksUI = Ember.Namespace.create();
     }
     /**
      @property VERSION
      @type String
-     @default 'VERSION_STRING_PLACEHOLDER'
+     @default '0.0.1-beta.1+canary.38d909b2'
      @static
      */
-    BricksUI.VERSION = 'VERSION_STRING_PLACEHOLDER';
+    BricksUI.VERSION = '0.0.1-beta.1+canary.38d909b2';
     
-    var exports = this;
+    var DEFAULT_ENV = {
+      /**
+       * @description 是否将语言选择持久化到cookie中，如果设置为true，则将优先获取cookie设置的语言
+       */
+      PERSISTENT_I18N: true,
+      MODULE_PREFIX:'appkit',
+      LANG_FOLDER_NAME:"lang"
+    };
     
-    exports.BricksUI = BricksUI;
-    __exports__["default"] = Ember;
+    /**
+     * @description Bricks变量配置
+     * I18NCOOKIEPERSISTENT : true
+     *
+     */
+    if ("undefined" === typeof BricksUI.ENV) {
+      BricksUI.ENV = DEFAULT_ENV;
+    } else {
+      Ember.$.extend(true, BricksUI.ENV, DEFAULT_ENV);
+    }
+    
+    __exports__["default"] = BricksUI;
   });
 define("bricksui-metal/event_manager",
   ["bricksui-metal/core","exports"],
@@ -1011,7 +1321,7 @@ define("bricksui-metal/state_handler",
         ;
     /**
      * @class StateHandler
-     * @namespace Bricks
+     * @namespace BricksUI
      */
     var StateHandler = Mixin.create({
         mergedProperties: ["_states"],
@@ -1359,7 +1669,7 @@ function program1(depth0,data) {
     'checkedBinding': ("selected"),
     'selectionBinding': ("selected"),
     'valueBinding': ("item.name")
-  },hashTypes:{'nameBinding': "STRING",'checkedBinding': "STRING",'selectionBinding': "STRING",'valueBinding': "ID"},hashContexts:{'nameBinding': depth0,'checkedBinding': depth0,'selectionBinding': depth0,'valueBinding': depth0},contexts:[depth0],types:["ID"],data:data})));
+  },hashTypes:{'nameBinding': "STRING",'checkedBinding': "STRING",'selectionBinding': "STRING",'valueBinding': "STRING"},hashContexts:{'nameBinding': depth0,'checkedBinding': depth0,'selectionBinding': depth0,'valueBinding': depth0},contexts:[depth0],types:["ID"],data:data})));
   data.buffer.push("\n                ");
   data.buffer.push(escapeExpression(helpers.unbound.call(depth0, "label", {hash:{},hashTypes:{},hashContexts:{},contexts:[depth0],types:["ID"],data:data})));
   data.buffer.push("\n            </label>\n        </div>\n    ");
@@ -1411,6 +1721,54 @@ function program5(depth0,data) {
   
 });
 
+Ember.TEMPLATES['bootstrap-validation-input'] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
+this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
+  var buffer = '', stack1, helper, options, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, self=this;
+
+function program1(depth0,data) {
+  
+  var buffer = '', helper, options;
+  data.buffer.push("\n        ");
+  data.buffer.push(escapeExpression((helper = helpers['error-field'] || (depth0 && depth0['error-field']),options={hash:{
+    'propertyBinding': ("view.property")
+  },hashTypes:{'propertyBinding': "STRING"},hashContexts:{'propertyBinding': depth0},contexts:[],types:[],data:data},helper ? helper.call(depth0, options) : helperMissing.call(depth0, "error-field", options))));
+  data.buffer.push("\n    ");
+  return buffer;
+  }
+
+function program3(depth0,data) {
+  
+  var buffer = '', helper, options;
+  data.buffer.push("\n        ");
+  data.buffer.push(escapeExpression((helper = helpers['hint-field'] || (depth0 && depth0['hint-field']),options={hash:{
+    'propertyBinding': ("view.property"),
+    'textBinding': ("view.hint")
+  },hashTypes:{'propertyBinding': "STRING",'textBinding': "STRING"},hashContexts:{'propertyBinding': depth0,'textBinding': depth0},contexts:[],types:[],data:data},helper ? helper.call(depth0, options) : helperMissing.call(depth0, "hint-field", options))));
+  data.buffer.push("\n    ");
+  return buffer;
+  }
+
+  data.buffer.push(escapeExpression((helper = helpers['label-field'] || (depth0 && depth0['label-field']),options={hash:{
+    'propertyBinding': ("view.property"),
+    'textBinding': ("view.label")
+  },hashTypes:{'propertyBinding': "STRING",'textBinding': "STRING"},hashContexts:{'propertyBinding': depth0,'textBinding': depth0},contexts:[],types:[],data:data},helper ? helper.call(depth0, options) : helperMissing.call(depth0, "label-field", options))));
+  data.buffer.push("\n<div class=\"");
+  data.buffer.push(escapeExpression(helpers.unbound.call(depth0, "view.wrapperConfig.controlsWrapperClass", {hash:{},hashTypes:{},hashContexts:{},contexts:[depth0],types:["ID"],data:data})));
+  data.buffer.push("\">\n    ");
+  stack1 = helpers._triageMustache.call(depth0, "yield", {hash:{},hashTypes:{},hashContexts:{},contexts:[depth0],types:["ID"],data:data});
+  if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
+  data.buffer.push("\n    ");
+  stack1 = helpers['if'].call(depth0, "view.showError", {hash:{},hashTypes:{},hashContexts:{},inverse:self.noop,fn:self.program(1, program1, data),contexts:[depth0],types:["ID"],data:data});
+  if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
+  data.buffer.push("\n    ");
+  stack1 = helpers['if'].call(depth0, "view.hint", {hash:{},hashTypes:{},hashContexts:{},inverse:self.noop,fn:self.program(3, program3, data),contexts:[depth0],types:["ID"],data:data});
+  if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
+  data.buffer.push("\n</div>");
+  return buffer;
+  
+});
+
 Ember.TEMPLATES['components/bu-editor'] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
 this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
@@ -1418,7 +1776,7 @@ helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
 
 
   data.buffer.push("<textarea id=\"");
-  data.buffer.push(escapeExpression(helpers.unbound.call(depth0, "holderId", {hash:{},hashTypes:{},hashContexts:{},contexts:[depth0],types:["ID"],data:data})));
+  data.buffer.push(escapeExpression(helpers.unbound.call(depth0, "view.holderId", {hash:{},hashTypes:{},hashContexts:{},contexts:[depth0],types:["ID"],data:data})));
   data.buffer.push("\"></textarea>");
   return buffer;
   
