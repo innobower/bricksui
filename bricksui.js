@@ -3,7 +3,7 @@
  * @copyright Copyright 2014-2014 Tilde Inc. and contributors
  * @license   Licensed under MIT license
  *            See https://raw.github.com/innobricks/bricksui/master/LICENSE
- * @version   0.0.1-beta.1+canary.c41856cc
+ * @version   0.0.1-beta.1+canary.72c3e3ce
  */
 
 (function() {
@@ -80,6 +80,11 @@ define("bricksui-form",
     var Radio = __dependency8__["default"];
     var RadioButton = __dependency9__["default"];
 
+    /**
+     BricksUI表单支持模块，对Ember-Easy-Form进行功能拓展，整合Validation与I18n
+     @module bricksui
+     @submodule bricksui-form
+     */
     Ember.EasyForm.Checkbox = Checkbox;
     Ember.EasyForm.Radio = Radio;
     Ember.RadioButton = RadioButton;
@@ -89,9 +94,19 @@ define("bricksui-form/bu-editor",
   function(__exports__) {
     "use strict";
     var get = Ember.get, set = Ember.set;
+
+    /**
+     @module bricksui
+     @submodule bricksui-form
+     */
     /**
      基于ember与[百度富文本编辑器umeditor](http://ueditor.baidu.com/website/umeditor.html)
      主要增加了数据绑定的功能，config配置项与umeditor一致
+     继承自Ember.Component，用法上与Ember.Component保持一致
+     使用方式如:
+     ```handlebars
+     {{bu-editor value=title valueType="contentTxt"}}
+     ```
      @class BuEditor
      @namespace Ember
      @extends Ember.Component
@@ -100,9 +115,10 @@ define("bricksui-form/bu-editor",
     var BuEditor = Ember.Component.extend({
 
       /**
-       value类型，分别为content和contentTxt,content包含其中的段落标签
+       value类型，分别为content和contentTxt,content包含其中的段落标签,contentTxt则指纯文本内容
        @property valueType
        @type string
+       @default "content"
        */
       valueType: "content",
 
@@ -249,24 +265,72 @@ define("bricksui-form/checkbox",
   ["exports"],
   function(__exports__) {
     "use strict";
+    /**
+     @module bricksui
+     @submodule bricksui-form
+     */
+    /**
+     拓展Ember.EasyForm.Input的CheckBox功能
+     提供复选框按钮组的功能
+     使用方式如:
+     ```handlebars
+     {{checkbox something modelBinding="model" propertyPath="something" elementsBinding="fruits" labelPath="name"}}
+     ```
+     @class Checkbox
+     @namespace Ember.EasyForm
+     @extends Ember.EasyForm.Input
+     */
     var Checkbox = Ember.EasyForm.Input.extend({
-        init: function () {
-            this._super.apply(this, arguments);
-            this.set('templateName', this.get('wrapperConfig.checkboxTemplate'));
-            this.set('context', this);
-            this.set('controller', this);
-        },
-        /* The property to be used as label */
-        labelPath: null,
-        /* The model */
-        model: null,
-        /* The has many property from the model */
-        propertyPath: null,
-        /* All possible elements, to be selected */
-        elements: null,
-        elementsOfProperty: function () {
-            return this.get('model.' + this.get('propertyPath'));
-        }.property()
+      /**
+       *初始化操作，模仿Ember.Component,将视图上下文设置未自身，并从Ember.EasyForm.Config中获取模板
+       *@method init
+       */
+      init: function () {
+        this._super.apply(this, arguments);
+        this.set('templateName', this.get('wrapperConfig.checkboxTemplate'));
+        this.set('context', this);
+        this.set('controller', this);
+      },
+      /**
+       * 标签属性
+       * 如 elements为 [{key:1,value:"123"},{key:2,value:"234"}]需要将value值作为label展示，则只需设置labelPath为value
+       * @property labelPath
+       * @default null
+       * @type string
+       */
+      labelPath: null,
+
+      /**
+       * 绑定的Ember Data模型
+       * @default null
+       * @property model
+       * @type object
+       */
+      model: null,
+
+      /**
+       * 绑定模型中的hasMany属性，在elements复选框选中的对象将push到该属性中
+       * @property propertyPath
+       * @type string
+       * @default null
+       */
+      propertyPath: null,
+
+      /**
+       * 复选框的模型，必须为一个数组类型
+       * 如 elements为 [{key:1,value:"123"},{key:2,value:"234"}]
+       * @property elements
+       * @default null
+       * @type object
+       */
+      elements: null,
+
+      /**
+       * @private
+       */
+      elementsOfProperty: function () {
+        return this.get('model.' + this.get('propertyPath'));
+      }.property()
 
     });
 
@@ -276,69 +340,103 @@ define("bricksui-form/chosen-select",
   ["exports"],
   function(__exports__) {
     "use strict";
-    __exports__["default"] = Ember.EasyForm.Select.reopen({
+    /**
+     @module bricksui
+     @submodule bricksui-form
+     */
+
+    /**
+     * 重置Ember.EasyForm下拉组建行为，将下拉框组件行为转换未chosen组建，用户通常无需直接使用该组建，
+     * 应通过Ember-EasyForm的方式使用该组件
+     * 可选的参数有 data-placeholder，表示下拉组建的占位符
+     * 使用方式如
+     ```handlebars
+     {{#form-for model wrapper="bootstrap"}}
+     {{input author
+     as='select'
+     data-placeholder="请选择作者"
+     collection="category"
+     optionLabelPath="content.value"
+     }}
+     {{input tags as='select'
+     data-placeholder="请选标签"
+     multiple=true
+     collection="category"
+     optionLabelPath="content.value"
+     }}
+     {{/form-for}}
+     ```
+     * @class Select
+     * @namespace Ember.EasyForm
+     */
+    var ChosenSelect = Ember.EasyForm.Select.reopen({
 
       classNames: ['form-control'],
-      attributeBindings:['data-placeholder'],
+      attributeBindings: ['data-placeholder'],
 
-      init:function(){
+      init: function () {
         this._super();
-        this.set('prompt',' ');  //对于chosen组件，需要存在一个为空的promt
+        this.set('prompt', ' ');  //对于chosen组件，需要存在一个为空的promt
 
         //once elements trigger blur event,the parentView will show validated result,
         //aim to defer validation
-        var parentView=this.get('parentView');
-        parentView.focusOut=function(){
+        var parentView = this.get('parentView');
+        parentView.focusOut = function () {
           parentView.set(parentView.set('hasFocusedOut', true));
         };
 
       },
 
       /**
-       * @description 在收到通知需进行销毁后，销毁chsen组建
        * @private
+       * @method _elementDestroy
+       * @description 在收到通知需进行销毁后，销毁chsen组建
        */
-      _elementDestroy:function(){
+      _elementDestroy: function () {
         this.$().chosen('destroy');
       }.on('willDestroyElement'),
 
 
       /**
-       * @description 在select的context发生变化后，通知chosen进行视图更新
        * @private
+       * @method _updateItem
+       * @description 在select的context发生变化后，通知chosen进行视图更新
        */
-      _updateItem:function(){
-        Ember.run.scheduleOnce('afterRender',this,function(){
+      _updateItem: function () {
+        Ember.run.scheduleOnce('afterRender', this, function () {
           this.$().trigger('chosen:updated');
         });
       }.observes('content.@each'),
 
-      _doShowFocus:function(){
+      _doShowFocus: function () {
         this.get('parentView').showValidationError();
       },
 
-      _validation:function(){
-        var callback=this._doShowFocus.bind(this);
-        this.get('parentView.formForModel').validate().then(callback,callback);
+      _validation: function () {
+        var callback = this._doShowFocus.bind(this);
+        this.get('parentView.formForModel').validate().then(callback, callback);
       },
 
       /**
        * @description 在视图渲染完成后，将select组件转换为chosen组件
+       * @method _updateDom
        * @private
        */
-      _updateDom:function(){
+      _updateDom: function () {
 
-        Ember.run.scheduleOnce('afterRender',this,function(){
+        Ember.run.scheduleOnce('afterRender', this, function () {
           //在select视图渲染成成后，将其转换为chosen下拉框，并监听change事件
           this.$().chosen()
-            .on('change chosen:hiding_dropdown',function(){
+            .on('change chosen:hiding_dropdown', function () {
               //为了取得数组正确的变化，将validate推迟到下一生命周期运行
-              Ember.run.next(this,'_validation');
+              Ember.run.next(this, '_validation');
             }.bind(this))
           ;
         });
       }.on('didInsertElement')
     });
+
+    __exports__["default"] = ChosenSelect;
   });
 define("bricksui-form/controllers/checkbox_item",
   ["exports"],
@@ -482,6 +580,14 @@ define("bricksui-form/form-setup",
     var RadioItemController = __dependency2__["default"];
     var BuEditor = __dependency3__["default"];
 
+    /**
+     * 向模板中注册
+     *  控制器
+     *    checkboxItem
+     *    radioItem
+     *  组件
+     *    bu-editor
+     */
     __exports__["default"] = function initFormController(container, application) {
         container.register('controller:checkboxItem', CheckboxItemController);
         container.register('controller:radioItem', RadioItemController);
@@ -631,6 +737,10 @@ define("bricksui-form/radio-button",
   ["exports"],
   function(__exports__) {
     "use strict";
+    /**
+     @module bricksui
+     @submodule bricksui-form
+     */
     var RadioButton = Ember.View.extend({
         tagName: "input",
         type: "radio",
@@ -651,6 +761,20 @@ define("bricksui-form/radio",
     "use strict";
     var Checkbox = __dependency1__["default"];
 
+    /**
+     @module bricksui
+     @submodule bricksui-form
+     */
+    /**
+     拓展Ember.EasyForm.Input的Radio功能
+     提供单选按钮组的功能
+     ```handlebars
+     {{radio something modelBinding="model" propertyPath="something" elementsBinding="fruits" labelPath="name"}}
+     ```
+     @class Radio
+     @namespace Ember.EasyForm
+     @extends Ember.EasyForm.Checkbox
+     */
     var Radio = Checkbox.extend({
         init: function () {
             this._super.apply(this, arguments);
@@ -679,31 +803,41 @@ define("bricksui-i18n",
     var translationHelper = __dependency7__.translationHelper;
     /**
      @module bricksui
-     @submodule bricks-i18n
+     @submodule bricksui-i18n
      @description 国际化支持
      */
     /**
      * @class I18n
      * @namespace BricksUI
      * @type {Object}
+     * @static
      */
     var I18n = {};
     /**
-     * I18n lang locale package
-     * @module bricksui-i18n
-     * @submodule bricks-i18n-lang
-     * @type {Object}
-     */
-    I18n.lang = {};
-
-    /**
+     * I18n语言包Hash.
+     * ```javascript
      * en :en-us en-hk en-au
      * de :de-dk de-ch de-lu
      * zh-cn : zh-cn
      * zh-tw : zh-tw
-     *  @default "zh-cn"
+     * ```
+     * @static
+     * @class lang
+     * @namespace BricksUI.I18n
+     * @type {Object}
+     * @default zh-cn
+     */
+    I18n.lang = {};
+
+    /**
+     *  @property en
+     *  @type Hash
      */
     I18n.lang['en'] = en;
+    /**
+     * @property zh-cn
+     * @type Hash
+     */
     I18n.lang['zh-cn'] = zhCN;
 
     I18n.I18nableValidationMixin = i18nValidator;
@@ -754,7 +888,7 @@ define("bricksui-i18n/helpers/translation",
                 attrs[propertyName] = currentValue;
                 invoker = null;
                 normalized = EmHandlebars.normalizePath(context, bindPath, data);
-                _ref = [normalized.root, normalized.path], root = _ref[0], normalizedPath = _ref[1];
+                _ref = [normalized.root, normalized.path], root = _ref[0], normalizedPath = _ref[1]; //jshint ignore:line
 
                 observer = function () {
                     var elem, newValue;
@@ -796,8 +930,16 @@ define("bricksui-i18n/i18n-support",
     "use strict";
     var BricksUI = __dependency1__["default"];
 
+    /**
+     @module bricksui
+     @submodule bricksui-i18n
+     */
     var langKey = "bricksui-lang";
 
+    /**
+     * 从cookie中获取已保留的语言选择情况
+     * @returns {*} 如果语言选择已经保存在cookie中，则返回已保存的语言结构，如果不存在则返回空
+     */
     var loadLang = function () {
         try {
             return JSON.parse(Ember.$.cookie(langKey));
@@ -806,6 +948,10 @@ define("bricksui-i18n/i18n-support",
         }
     };
 
+    /**
+     * 获取并解析客户端语言
+     * @returns {{fullName: *, language, area}}
+     */
     var parseLanguage = function () {
         var language = (window.navigator.language || window.navigator.browserLanguage).toLowerCase(),
             match
@@ -817,6 +963,11 @@ define("bricksui-i18n/i18n-support",
             area: match[2]
         };
     };
+    /**
+     * 根据命名约定，从项目文件中加载语言包
+     * @param parsedName
+     * @returns {{localeName: ({language: *}|*|set.language|parseLanguage.language|language|string), localeLang: *}}
+     */
     var requireLang = function (parsedName) {
         var require = window.require;
         if (typeof parsedName === "string") {
@@ -839,11 +990,21 @@ define("bricksui-i18n/i18n-support",
             localeLang: localeLang
         };
     };
+
+    /**
+     * 持久化用户所保存的语言选择
+     * @param {object} lang
+     */
     var saveLang = function (lang) {
         if (BricksUI.ENV.PERSISTENT_I18N) {
             Ember.$.cookie(langKey, JSON.stringify(lang), { expires: 7 });
         }
     };
+
+    /**
+     * 将语言对象合并到BricksUI.I18n.lang Hash下，并同步到Ember.I18n.translations对象下
+     * @param {object} locale
+     */
     var mergeLang = function (locale) {
         var localeName = locale.localeName;
         var localeLang = locale.localeLang;
@@ -851,6 +1012,13 @@ define("bricksui-i18n/i18n-support",
         Ember.$.extend(true, bricksLocale, localeLang);
         Ember.$.extend(true, Ember.I18n.translations, bricksLocale);
     };
+
+    /**
+     * 在项目载入时进行I18n的选择，并根据是否开启语言选择持久化，保存语言选择
+     * @private
+     * @method initLang
+     * @for BricksUI.I18n
+     */
     var initLang = function () {
         var parsedName;
         if (BricksUI.ENV.PERSISTENT_I18N) {
@@ -887,7 +1055,9 @@ define("bricksui-i18n/i18n-support",
                 delete translations[prop];
             }
         }
-        Ember.instrument("i18nChange");
+        Ember.instrument("i18nChange",null,function(){
+            Ember.Logger.warn("no listener for i18nChange! nothing changed!");
+        });
     };
 
     __exports__.initLang = initLang;
@@ -898,8 +1068,30 @@ define("bricksui-i18n/i18n-validator",
   function(__exports__) {
     "use strict";
     /**
+     @module bricksui
+     @submodule bricksui-i18n
+     @description 国际化支持
+     @constructor
+     */
+    /**
+     * @class I18nableValidationMixin
+     * @extends Ember.Validations.Mixin
+     * @namespace BricksUI.I18n
      * @description 继承自Ember-Validations,拓展语言切换支持。通过该方法可做到即时的语言切换，缺点在于很难与默认的t.i18n进行交互
      * 该方法订阅 'i18nChange' 事件，在事件触发后，调用自身 validate方法
+     * 使用方法为在需要使用校验的对象中参入I18nableValidationMixin
+     * 如：
+     ```javascript
+      var Post=DS.Model.extend(BricksUI.I18n.I18nableValidationMixin,{
+        title:DS.attr('string')
+        validations: {
+          title:{
+            presence: true,
+            length: { minimum: 5 }
+          }
+        }
+     })
+     ```
      */
     var I18nableValidationMixin = Ember.Mixin.create(Ember.Validations.Mixin,{
       init: function () {
@@ -1005,7 +1197,10 @@ define("bricksui-metal",
     var EventManager = __dependency2__["default"];
     var StateHandler = __dependency3__["default"];
     var Stateable = __dependency4__["default"];
-
+    /**
+     * @module bricksui
+     * @submodule bricksui-metal
+     */
     BricksUI.EventManager = EventManager;
     BricksUI.Stateable = Stateable;
     BricksUI.StateHandler = StateHandler;
@@ -1023,38 +1218,57 @@ define("bricksui-metal/core",
     /**
      *  BricksUI ,a widget library on ember.js
      *  @class BricksUI
-     *  @statis
-     *  @version 0.0.1-beta.1+canary.c41856cc
+     *  @static
+     *  @version 0.0.1-beta.1+canary.72c3e3ce
      */
     if ("undefined" === typeof BricksUI) {
-      BricksUI = Ember.Namespace.create();
+        BricksUI = Ember.Namespace.create();
     }
     /**
      @property VERSION
      @type String
-     @default '0.0.1-beta.1+canary.c41856cc'
+     @default '0.0.1-beta.1+canary.72c3e3ce'
      @static
      */
-    BricksUI.VERSION = '0.0.1-beta.1+canary.c41856cc';
+    BricksUI.VERSION = '0.0.1-beta.1+canary.72c3e3ce';
     
     var DEFAULT_ENV = {
-      /**
-       * @description 是否将语言选择持久化到cookie中，如果设置为true，则将优先获取cookie设置的语言
-       */
-      PERSISTENT_I18N: true,
-      MODULE_PREFIX:'appkit',
-      LANG_FOLDER_NAME:"lang"
+        /**
+         * 是否将语言选择持久化到cookie中，如果设置为true，则将优先获取cookie设置的语言
+         * @property PERSISTENT_I18N
+         * @for BricksUI.ENV
+         * @type Boolean
+         * @default true
+         */
+        PERSISTENT_I18N: true,
+        /**
+         * 应用前缀
+         * @property MODULE_PREFIX
+         * @for BricksUI.ENV
+         * @type String
+         * @default appkit
+         */
+        MODULE_PREFIX: 'appkit',
+        /**
+         * 语言包存放路径
+         * @property LANG_FOLDER_NAME
+         * @for BricksUI.ENV
+         * @type String
+         * @default lang
+         */
+        LANG_FOLDER_NAME: "lang"
     };
     
     /**
-     * @description Bricks变量配置
-     * I18NCOOKIEPERSISTENT : true
-     *
+     *  @description Bricks变量配置
+     *  @class ENV
+     *  @namespace BricksUI
+     *  @type Hash
      */
     if ("undefined" === typeof BricksUI.ENV) {
-      BricksUI.ENV = DEFAULT_ENV;
+        BricksUI.ENV = DEFAULT_ENV;
     } else {
-      Ember.$.extend(true, BricksUI.ENV, DEFAULT_ENV);
+        Ember.$.extend(true, BricksUI.ENV, DEFAULT_ENV);
     }
     
     __exports__["default"] = BricksUI;
@@ -1063,6 +1277,11 @@ define("bricksui-metal/event_manager",
   ["bricksui-metal/core","exports"],
   function(__dependency1__, __exports__) {
     "use strict";
+    /**
+     * @module bricksui
+     * @submodule bricksui-metal
+     */
+
     var BricksUI = __dependency1__["default"];
     var Em = window.Ember;
     /**
@@ -1300,6 +1519,11 @@ define("bricksui-metal/state_handler",
   function(__exports__) {
     "use strict";
     /**
+     * @module bricksui
+     * @submodule bricksui-metal
+     */
+
+    /**
      * 状态处理器
      * 在extend时将states属性移到_states属性,
      * 继承该接口,可以实现states在子父类间继承
@@ -1372,6 +1596,11 @@ define("bricksui-metal/stateable",
   ["exports"],
   function(__exports__) {
     "use strict";
+    /**
+     * @module bricksui
+     * @submodule bricksui-metal
+     */
+    
     /**
      * 有限状态机(Finite State Machine)
      *   有限状态机对行为建模
@@ -1520,6 +1749,10 @@ define("bricksui-metal/view",
   ["bricksui-metal/core","bricksui-metal/statechart","bricksui-metal/event_manager","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     "use strict";
+    /**
+     * @module bricksui-metal
+     */
+
     var BricksUI = __dependency1__["default"];
     var Stateable = __dependency2__["default"];
     var EventManager = __dependency3__["default"];
