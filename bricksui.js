@@ -1003,6 +1003,7 @@ define("bricksui-i18n/i18n-support",
 
     /**
      * 将语言对象合并到BricksUI.I18n.lang Hash下，并同步到Ember.I18n.translations对象下
+     * @private
      * @param {object} locale
      */
     var mergeLang = function (locale) {
