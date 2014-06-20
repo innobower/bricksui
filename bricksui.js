@@ -3,7 +3,7 @@
  * @copyright Copyright 2014-2014 Tilde Inc. and contributors
  * @license   Licensed under MIT license
  *            See https://raw.github.com/innobricks/bricksui/master/LICENSE
- * @version   0.0.1-beta.1+canary.72c3e3ce
+ * @version   0.0.1-beta.1+canary.1a51009a
  */
 
 (function() {
@@ -215,7 +215,7 @@ define("bricksui-form/bu-editor",
 
 
       /**
-       将textarea转换未UMeditor实例
+       将textarea转换为UMeditor实例
        @private
        @method _updateDom
        */
@@ -282,7 +282,7 @@ define("bricksui-form/checkbox",
      */
     var Checkbox = Ember.EasyForm.Input.extend({
       /**
-       *初始化操作，模仿Ember.Component,将视图上下文设置未自身，并从Ember.EasyForm.Config中获取模板
+       *初始化操作，模仿Ember.Component,将视图上下文设置为自身，并从Ember.EasyForm.Config中获取模板
        *@method init
        */
       init: function () {
@@ -346,9 +346,9 @@ define("bricksui-form/chosen-select",
      */
 
     /**
-     * 重置Ember.EasyForm下拉组建行为，将下拉框组件行为转换未chosen组建，用户通常无需直接使用该组建，
+     * 重置Ember.EasyForm下拉组件行为，将下拉框组件行为转换为chosen组件，用户通常无需直接使用该组件，
      * 应通过Ember-EasyForm的方式使用该组件
-     * 可选的参数有 data-placeholder，表示下拉组建的占位符
+     * 可选的参数有 data-placeholder，表示下拉组件的占位符
      * 使用方式如
      ```handlebars
      {{#form-for model wrapper="bootstrap"}}
@@ -390,7 +390,7 @@ define("bricksui-form/chosen-select",
       /**
        * @private
        * @method _elementDestroy
-       * @description 在收到通知需进行销毁后，销毁chsen组建
+       * @description 在收到通知需进行销毁后，销毁chsen组件
        */
       _elementDestroy: function () {
         this.$().chosen('destroy');
@@ -1003,6 +1003,7 @@ define("bricksui-i18n/i18n-support",
 
     /**
      * 将语言对象合并到BricksUI.I18n.lang Hash下，并同步到Ember.I18n.translations对象下
+     * @private
      * @param {object} locale
      */
     var mergeLang = function (locale) {
@@ -1219,7 +1220,7 @@ define("bricksui-metal/core",
      *  BricksUI ,a widget library on ember.js
      *  @class BricksUI
      *  @static
-     *  @version 0.0.1-beta.1+canary.72c3e3ce
+     *  @version 0.0.1-beta.1+canary.1a51009a
      */
     if ("undefined" === typeof BricksUI) {
         BricksUI = Ember.Namespace.create();
@@ -1227,10 +1228,10 @@ define("bricksui-metal/core",
     /**
      @property VERSION
      @type String
-     @default '0.0.1-beta.1+canary.72c3e3ce'
+     @default '0.0.1-beta.1+canary.1a51009a'
      @static
      */
-    BricksUI.VERSION = '0.0.1-beta.1+canary.72c3e3ce';
+    BricksUI.VERSION = '0.0.1-beta.1+canary.1a51009a';
     
     var DEFAULT_ENV = {
         /**
