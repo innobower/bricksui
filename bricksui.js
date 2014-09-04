@@ -3,7 +3,7 @@
  * @copyright Copyright 2014-2014 e-vada.com and contributors
  * @license   Licensed under MIT license
  *            See https://raw.github.com/innobricks/bricksui/master/LICENSE
- * @version   0.0.1-beta.1+canary.6ebf1145
+ * @version   0.0.1-beta.1+canary.a82dac1d
  */
 
 (function() {
@@ -2771,7 +2771,7 @@ define("bricksui-metal/core",
      *  BricksUI ,a widget library on ember.js
      *  @class BricksUI
      *  @static
-     *  @version 0.0.1-beta.1+canary.6ebf1145
+     *  @version 0.0.1-beta.1+canary.a82dac1d
      */
     if ("undefined" === typeof BricksUI) {
         BricksUI = Ember.Namespace.create();
@@ -2779,10 +2779,10 @@ define("bricksui-metal/core",
     /**
      @property VERSION
      @type String
-     @default '0.0.1-beta.1+canary.6ebf1145'
+     @default '0.0.1-beta.1+canary.a82dac1d'
      @static
      */
-    BricksUI.VERSION = '0.0.1-beta.1+canary.6ebf1145';
+    BricksUI.VERSION = '0.0.1-beta.1+canary.a82dac1d';
     
     var DEFAULT_ENV = {
         /**
