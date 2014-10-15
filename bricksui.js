@@ -3,7 +3,7 @@
  * @copyright Copyright 2014-2014 e-vada.com and contributors
  * @license   Licensed under MIT license
  *            See https://raw.github.com/innobricks/bricksui/master/LICENSE
- * @version   0.0.1-beta.1+canary.a82dac1d
+ * @version   0.0.1-beta.1+canary.9eb46a7a
  */
 
 (function() {
@@ -2771,7 +2771,7 @@ define("bricksui-metal/core",
      *  BricksUI ,a widget library on ember.js
      *  @class BricksUI
      *  @static
-     *  @version 0.0.1-beta.1+canary.a82dac1d
+     *  @version 0.0.1-beta.1+canary.9eb46a7a
      */
     if ("undefined" === typeof BricksUI) {
         BricksUI = Ember.Namespace.create();
@@ -2779,10 +2779,10 @@ define("bricksui-metal/core",
     /**
      @property VERSION
      @type String
-     @default '0.0.1-beta.1+canary.a82dac1d'
+     @default '0.0.1-beta.1+canary.9eb46a7a'
      @static
      */
-    BricksUI.VERSION = '0.0.1-beta.1+canary.a82dac1d';
+    BricksUI.VERSION = '0.0.1-beta.1+canary.9eb46a7a';
     
     var DEFAULT_ENV = {
         /**
@@ -2816,7 +2816,11 @@ define("bricksui-metal/core",
          * @type String
          * @default zh-cn
          */
-        DEFAULT_LANG: 'zh-cn'
+        DEFAULT_LANG: {
+            fullName: "zh-cn",
+            language: "zh",
+            area: "china"
+        }
     };
     
     /**
@@ -3110,7 +3114,7 @@ define("bricksui-metal/helper-support",
         for (var helper in hash) {
             var tmp = helpers[helper];
             Ember.assert("helper:" + helper + " does not exist !", tmp);
-            delete helpers[helper];
+    //        delete helpers[helper];
             helpers[hash[helper]] = tmp;
         }
     }
@@ -4714,7 +4718,6 @@ define("bricksui-thirdpart/initializer",
         "bs-tabs": "bu-tabs",
         "bs-tabs-panes": "bu-tabs-panes",
         "bs-tooltip": "bu-tooltip",
-        "bs-modal":"bu-modal",
         "bs-wizard": "bu-wizard",
         "table-component": "bu-table"
     });

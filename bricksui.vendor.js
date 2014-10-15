@@ -15194,6 +15194,63 @@ if (!jQuery) { throw new Error("Bootstrap requires jQuery") }
   };
 }));
 
+/* ========================================================================
+ * Bootstrap: transition.js v3.0.0
+ * http://twbs.github.com/bootstrap/javascript.html#transitions
+ * ========================================================================
+ * Copyright 2013 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ======================================================================== */
+
+
++function ($) { "use strict";
+
+  // CSS TRANSITION SUPPORT (Shoutout: http://www.modernizr.com/)
+  // ============================================================
+
+  function transitionEnd() {
+    var el = document.createElement('bootstrap')
+
+    var transEndEventNames = {
+      'WebkitTransition' : 'webkitTransitionEnd'
+    , 'MozTransition'    : 'transitionend'
+    , 'OTransition'      : 'oTransitionEnd otransitionend'
+    , 'transition'       : 'transitionend'
+    }
+
+    for (var name in transEndEventNames) {
+      if (el.style[name] !== undefined) {
+        return { end: transEndEventNames[name] }
+      }
+    }
+  }
+
+  // http://blog.alexmaccaw.com/css-transitions
+  $.fn.emulateTransitionEnd = function (duration) {
+    var called = false, $el = this
+    $(this).one($.support.transition.end, function () { called = true })
+    var callback = function () { if (!called) $($el).trigger($.support.transition.end) }
+    setTimeout(callback, duration)
+    return this
+  }
+
+  $(function () {
+    $.support.transition = transitionEnd()
+  })
+
+}(window.jQuery);
+
 (function() {
   var Bootstrap;
 
@@ -15614,6 +15671,105 @@ Views that inherits from this view can be enhanced with:
 
 }).call(this);
 
+/* ========================================================================
+ * Bootstrap: alert.js v3.0.0
+ * http://twbs.github.com/bootstrap/javascript.html#alerts
+ * ========================================================================
+ * Copyright 2013 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ======================================================================== */
+
+
++function ($) { "use strict";
+
+  // ALERT CLASS DEFINITION
+  // ======================
+
+  var dismiss = '[data-dismiss="alert"]'
+  var Alert   = function (el) {
+    $(el).on('click', dismiss, this.close)
+  }
+
+  Alert.prototype.close = function (e) {
+    var $this    = $(this)
+    var selector = $this.attr('data-target')
+
+    if (!selector) {
+      selector = $this.attr('href')
+      selector = selector && selector.replace(/.*(?=#[^\s]*$)/, '') // strip for ie7
+    }
+
+    var $parent = $(selector)
+
+    if (e) e.preventDefault()
+
+    if (!$parent.length) {
+      $parent = $this.hasClass('alert') ? $this : $this.parent()
+    }
+
+    $parent.trigger(e = $.Event('close.bs.alert'))
+
+    if (e.isDefaultPrevented()) return
+
+    $parent.removeClass('in')
+
+    function removeElement() {
+      $parent.trigger('closed.bs.alert').remove()
+    }
+
+    $.support.transition && $parent.hasClass('fade') ?
+      $parent
+        .one($.support.transition.end, removeElement)
+        .emulateTransitionEnd(150) :
+      removeElement()
+  }
+
+
+  // ALERT PLUGIN DEFINITION
+  // =======================
+
+  var old = $.fn.alert
+
+  $.fn.alert = function (option) {
+    return this.each(function () {
+      var $this = $(this)
+      var data  = $this.data('bs.alert')
+
+      if (!data) $this.data('bs.alert', (data = new Alert(this)))
+      if (typeof option == 'string') data[option].call($this)
+    })
+  }
+
+  $.fn.alert.Constructor = Alert
+
+
+  // ALERT NO CONFLICT
+  // =================
+
+  $.fn.alert.noConflict = function () {
+    $.fn.alert = old
+    return this
+  }
+
+
+  // ALERT DATA-API
+  // ==============
+
+  $(document).on('click.bs.alert.data-api', dismiss, Alert.prototype.close)
+
+}(window.jQuery);
+
 (function() {
   Bootstrap.BsAlertComponent = Ember.Component.extend(Bootstrap.TypeSupport, {
     classNames: ['alert'],
@@ -15656,14 +15812,14 @@ helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
 function program1(depth0,data) {
   
   
-  data.buffer.push("\r\n    <a class=\"close\" data-dismiss=\"alert\" href=\"#\">&times;</a>\r\n");
+  data.buffer.push("\n    <a class=\"close\" data-dismiss=\"alert\" href=\"#\">&times;</a>\n");
   }
 
   hashTypes = {};
   hashContexts = {};
   stack1 = helpers['if'].call(depth0, "dismiss", {hash:{},inverse:self.noop,fn:self.program(1, program1, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  data.buffer.push("\r\n");
+  data.buffer.push("\n");
   hashTypes = {};
   hashContexts = {};
   data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "message", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
@@ -15673,6 +15829,160 @@ function program1(depth0,data) {
   return buffer;
   
 });
+/*
+Breadcrumbs compponent.
+*/
+
+
+(function() {
+  Bootstrap.BsBreadcrumbsItem = Bootstrap.ItemView.extend({
+    tagName: ['li'],
+    classNameBindings: ["isActive:active"],
+    template: Ember.Handlebars.compile('{{#unless view.isActive}}{{#if view.content.model}}{{#link-to view.content.route model.id}}{{view.content.name}}{{/link-to}}{{else}}{{#link-to view.content.route}}{{view.content.name}}{{/link-to}}{{/if}}{{else}}{{view.content.name}}{{/unless}}'),
+    isActive: (function() {
+      return this.get('content.active');
+    }).property('content.active')
+  });
+
+  Bootstrap.BsBreadcrumbs = Bootstrap.ItemsView.extend(Bootstrap.WithRouter, {
+    tagName: ['ol'],
+    classNames: ['breadcrumb'],
+    currentPathObserver: (function() {
+      this.get('router');
+      return this.send('updateCrumbsByRoute');
+    }).observes('router.url').on('init'),
+    content: [],
+    itemViewClass: Bootstrap.BsBreadcrumbsItem,
+    nameDictionary: void 0,
+    dictionaryNamePrefix: 'breadcrumbs',
+    actions: {
+      currentPathDidChange: function() {
+        return this.send('updateCrumbsByRoute');
+      },
+      updateCrumbsByRoute: function() {
+        var routes,
+          _this = this;
+        this.get('content').clear();
+        routes = this.get('container').lookup('router:main');
+        routes.get('router.currentHandlerInfos').forEach(function(route, i, arr) {
+          var crumb, displayName, name, routeName, _ref, _ref1, _ref2;
+          name = route.name;
+          if (name.indexOf('.index') !== -1 || name === 'application') {
+            return;
+          }
+          if ((_ref = route.handler.breadcrumbs) != null ? _ref.hidden : void 0) {
+            return;
+          }
+          routeName = route.handler.routeName;
+          if ((_ref1 = route.handler.breadcrumbs) != null ? _ref1.name : void 0) {
+            displayName = route.handler.breadcrumbs.name;
+          } else if ((_ref2 = _this.get('nameDictionary')) != null ? _ref2["" + _this.dictionaryNamePrefix + "." + routeName] : void 0) {
+            displayName = _this.get('nameDictionary')["" + _this.dictionaryNamePrefix + "." + routeName];
+          } else {
+            displayName = route.handler.routeName.split('.').pop();
+            displayName = displayName[0].toUpperCase() + displayName.slice(1).toLowerCase();
+          }
+          crumb = Ember.Object.create({
+            route: route.handler.routeName,
+            name: displayName,
+            model: null
+          });
+          if (_this.get('content').length === 0) {
+            crumb.set('icon', 'fa fa-home home-icon');
+          }
+          if (route.isDynamic) {
+            crumb.setProperties({
+              model: route.handler.context,
+              name: route.handler.context.get('name')
+            });
+          }
+          return _this.get('content').pushObject(crumb);
+        });
+        return this.get('content.lastObject').set('active', true);
+      }
+    }
+  });
+
+  Ember.Handlebars.helper('bs-breadcrumbs', Bootstrap.BsBreadcrumbs);
+
+}).call(this);
+
+(function() {
+  Bootstrap.BsLabelComponent = Ember.Component.extend(Bootstrap.TypeSupport, {
+    layoutName: 'components/bs-label',
+    tagName: 'span',
+    classNames: ['label'],
+    classTypePrefix: 'label'
+  });
+
+  Ember.Handlebars.helper('bs-label', Bootstrap.BsLabelComponent);
+
+}).call(this);
+
+this["Ember"] = this["Ember"] || {};
+this["Ember"]["TEMPLATES"] = this["Ember"]["TEMPLATES"] || {};
+
+this["Ember"]["TEMPLATES"]["components/bs-label"] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
+this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
+  var hashTypes, hashContexts, escapeExpression=this.escapeExpression;
+
+
+  hashTypes = {};
+  hashContexts = {};
+  data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "content", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
+  
+});
+(function() {
+  Bootstrap.BsBadgeComponent = Ember.Component.extend(Bootstrap.TypeSupport, {
+    layoutName: 'components/bs-badge',
+    tagName: 'span',
+    classNames: ['badge'],
+    classTypePrefix: 'badge'
+  });
+
+  Ember.Handlebars.helper('bs-badge', Bootstrap.BsBadgeComponent);
+
+}).call(this);
+
+this["Ember"] = this["Ember"] || {};
+this["Ember"]["TEMPLATES"] = this["Ember"]["TEMPLATES"] || {};
+
+this["Ember"]["TEMPLATES"]["components/bs-badge"] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
+this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
+  var hashTypes, hashContexts, escapeExpression=this.escapeExpression;
+
+
+  hashTypes = {};
+  hashContexts = {};
+  data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "content", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
+  
+});
+(function() {
+  Bootstrap.BsWellComponent = Ember.Component.extend({
+    layoutName: 'components/bs-well',
+    classNameBindings: ['small:well-sm', 'large:well-lg'],
+    classNames: ['well'],
+    click: function() {
+      return this.sendAction('clicked');
+    }
+  });
+
+  Ember.Handlebars.helper('bs-well', Bootstrap.BsWellComponent);
+
+}).call(this);
+
+(function() {
+  Bootstrap.BsPageHeaderComponent = Ember.Component.extend({
+    layoutName: 'components/bs-page-header',
+    classNames: ['page-header']
+  });
+
+  Ember.Handlebars.helper('bs-page-header', Bootstrap.BsPageHeaderComponent);
+
+}).call(this);
+
 (function() {
   Bootstrap.BsPanelComponent = Ember.Component.extend(Bootstrap.TypeSupport, {
     layoutName: 'components/bs-panel',
@@ -15711,6 +16021,48 @@ function program1(depth0,data) {
 this["Ember"] = this["Ember"] || {};
 this["Ember"]["TEMPLATES"] = this["Ember"]["TEMPLATES"] || {};
 
+this["Ember"]["TEMPLATES"]["components/bs-page-header"] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
+this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
+  var buffer = '', stack1, hashTypes, hashContexts, escapeExpression=this.escapeExpression, self=this;
+
+function program1(depth0,data) {
+  
+  var buffer = '', hashTypes, hashContexts;
+  data.buffer.push("\n        <small>");
+  hashTypes = {};
+  hashContexts = {};
+  data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "sub", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
+  data.buffer.push("</small>\n    ");
+  return buffer;
+  }
+
+  data.buffer.push("<h1>\n    ");
+  hashTypes = {};
+  hashContexts = {};
+  data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "title", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
+  data.buffer.push("\n    ");
+  hashTypes = {};
+  hashContexts = {};
+  stack1 = helpers['if'].call(depth0, "sub", {hash:{},inverse:self.noop,fn:self.program(1, program1, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
+  if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
+  data.buffer.push("\n</h1>");
+  return buffer;
+  
+});
+
+this["Ember"]["TEMPLATES"]["components/bs-well"] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
+this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
+  var hashTypes, hashContexts, escapeExpression=this.escapeExpression;
+
+
+  hashTypes = {};
+  hashContexts = {};
+  data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "yield", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
+  
+});
+
 this["Ember"]["TEMPLATES"]["components/bs-panel"] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
 this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
@@ -15719,63 +16071,63 @@ helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
 function program1(depth0,data) {
   
   var buffer = '', stack1, hashTypes, hashContexts;
-  data.buffer.push("\r\n    <div class=\"panel-heading\">\r\n        ");
+  data.buffer.push("\n    <div class=\"panel-heading\">\n        ");
   hashTypes = {};
   hashContexts = {};
   stack1 = helpers['if'].call(depth0, "collapsible", {hash:{},inverse:self.program(4, program4, data),fn:self.program(2, program2, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  data.buffer.push("\r\n        ");
+  data.buffer.push("\n        ");
   hashTypes = {};
   hashContexts = {};
   stack1 = helpers['if'].call(depth0, "dismiss", {hash:{},inverse:self.noop,fn:self.program(6, program6, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  data.buffer.push("\r\n    </div>\r\n");
+  data.buffer.push("\n    </div>\n");
   return buffer;
   }
 function program2(depth0,data) {
   
   var buffer = '', stack1, hashContexts, hashTypes, options;
-  data.buffer.push("\r\n            <a class=\"accordion-toggle\" data-toggle=\"collapse\" data-parent=\"#accordion\" ");
+  data.buffer.push("\n            <a class=\"accordion-toggle\" data-toggle=\"collapse\" data-parent=\"#accordion\" ");
   hashContexts = {'href': depth0};
   hashTypes = {'href': "ID"};
   options = {hash:{
     'href': ("collapsibleBodyLink")
   },contexts:[],types:[],hashContexts:hashContexts,hashTypes:hashTypes,data:data};
   data.buffer.push(escapeExpression(((stack1 = helpers['bind-attr'] || depth0['bind-attr']),stack1 ? stack1.call(depth0, options) : helperMissing.call(depth0, "bind-attr", options))));
-  data.buffer.push(">\r\n                ");
+  data.buffer.push(">\n                ");
   hashTypes = {};
   hashContexts = {};
   data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "heading", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push("\r\n            </a>\r\n        ");
+  data.buffer.push("\n            </a>\n        ");
   return buffer;
   }
 
 function program4(depth0,data) {
   
   var buffer = '', hashTypes, hashContexts;
-  data.buffer.push("\r\n            ");
+  data.buffer.push("\n            ");
   hashTypes = {};
   hashContexts = {};
   data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "heading", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push("\r\n        ");
+  data.buffer.push("\n        ");
   return buffer;
   }
 
 function program6(depth0,data) {
   
   var buffer = '', hashTypes, hashContexts;
-  data.buffer.push("\r\n            <a class=\"close\" data-dismiss=\"panel\" ");
+  data.buffer.push("\n            <a class=\"close\" data-dismiss=\"panel\" ");
   hashTypes = {};
   hashContexts = {};
   data.buffer.push(escapeExpression(helpers.action.call(depth0, "close", {hash:{},contexts:[depth0],types:["STRING"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push(">&times;</a>\r\n        ");
+  data.buffer.push(">&times;</a>\n        ");
   return buffer;
   }
 
 function program8(depth0,data) {
   
   var buffer = '', stack1, hashContexts, hashTypes, options;
-  data.buffer.push("\r\n    <div ");
+  data.buffer.push("\n    <div ");
   hashContexts = {'id': depth0};
   hashTypes = {'id': "ID"};
   options = {hash:{
@@ -15789,33 +16141,33 @@ function program8(depth0,data) {
     'class': (":panel-collapse :collapse open:in")
   },contexts:[],types:[],hashContexts:hashContexts,hashTypes:hashTypes,data:data};
   data.buffer.push(escapeExpression(((stack1 = helpers['bind-attr'] || depth0['bind-attr']),stack1 ? stack1.call(depth0, options) : helperMissing.call(depth0, "bind-attr", options))));
-  data.buffer.push(">\r\n        <div class=\"panel-body\">");
+  data.buffer.push(">\n        <div class=\"panel-body\">");
   hashTypes = {};
   hashContexts = {};
   data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "yield", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push("</div>\r\n    </div>\r\n");
+  data.buffer.push("</div>\n    </div>\n");
   return buffer;
   }
 
 function program10(depth0,data) {
   
   var buffer = '', hashTypes, hashContexts;
-  data.buffer.push("\r\n    <div id=\"collapseOne\" class=\"panel-body\">");
+  data.buffer.push("\n    <div id=\"collapseOne\" class=\"panel-body\">");
   hashTypes = {};
   hashContexts = {};
   data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "yield", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push("</div>\r\n");
+  data.buffer.push("</div>\n");
   return buffer;
   }
 
 function program12(depth0,data) {
   
   var buffer = '', hashTypes, hashContexts;
-  data.buffer.push("\r\n    <div class=\"panel-footer\">");
+  data.buffer.push("\n    <div class=\"panel-footer\">");
   hashTypes = {};
   hashContexts = {};
   data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "footer", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push("</div>\r\n");
+  data.buffer.push("</div>\n");
   return buffer;
   }
 
@@ -15823,20 +16175,130 @@ function program12(depth0,data) {
   hashContexts = {};
   stack1 = helpers['if'].call(depth0, "heading", {hash:{},inverse:self.noop,fn:self.program(1, program1, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  data.buffer.push("\r\n\r\n");
+  data.buffer.push("\n\n");
   hashTypes = {};
   hashContexts = {};
   stack1 = helpers['if'].call(depth0, "collapsible", {hash:{},inverse:self.program(10, program10, data),fn:self.program(8, program8, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  data.buffer.push("\r\n\r\n");
+  data.buffer.push("\n\n");
   hashTypes = {};
   hashContexts = {};
   stack1 = helpers['if'].call(depth0, "footer", {hash:{},inverse:self.noop,fn:self.program(12, program12, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  data.buffer.push("\r\n");
+  data.buffer.push("\n");
   return buffer;
   
 });
+/* ========================================================================
+ * Bootstrap: button.js v3.0.0
+ * http://twbs.github.com/bootstrap/javascript.html#buttons
+ * ========================================================================
+ * Copyright 2013 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ======================================================================== */
+
+
++function ($) { "use strict";
+
+  // BUTTON PUBLIC CLASS DEFINITION
+  // ==============================
+
+  var Button = function (element, options) {
+    this.$element = $(element)
+    this.options  = $.extend({}, Button.DEFAULTS, options)
+  }
+
+  Button.DEFAULTS = {
+    loadingText: 'loading...'
+  }
+
+  Button.prototype.setState = function (state) {
+    var d    = 'disabled'
+    var $el  = this.$element
+    var val  = $el.is('input') ? 'val' : 'html'
+    var data = $el.data()
+
+    state = state + 'Text'
+
+    if (!data.resetText) $el.data('resetText', $el[val]())
+
+    $el[val](data[state] || this.options[state])
+
+    // push to event loop to allow forms to submit
+    setTimeout(function () {
+      state == 'loadingText' ?
+        $el.addClass(d).attr(d, d) :
+        $el.removeClass(d).removeAttr(d);
+    }, 0)
+  }
+
+  Button.prototype.toggle = function () {
+    var $parent = this.$element.closest('[data-toggle="buttons"]')
+
+    if ($parent.length) {
+      var $input = this.$element.find('input')
+        .prop('checked', !this.$element.hasClass('active'))
+        .trigger('change')
+      if ($input.prop('type') === 'radio') $parent.find('.active').removeClass('active')
+    }
+
+    this.$element.toggleClass('active')
+  }
+
+
+  // BUTTON PLUGIN DEFINITION
+  // ========================
+
+  var old = $.fn.button
+
+  $.fn.button = function (option) {
+    return this.each(function () {
+      var $this   = $(this)
+      var data    = $this.data('bs.button')
+      var options = typeof option == 'object' && option
+
+      if (!data) $this.data('bs.button', (data = new Button(this, options)))
+
+      if (option == 'toggle') data.toggle()
+      else if (option) data.setState(option)
+    })
+  }
+
+  $.fn.button.Constructor = Button
+
+
+  // BUTTON NO CONFLICT
+  // ==================
+
+  $.fn.button.noConflict = function () {
+    $.fn.button = old
+    return this
+  }
+
+
+  // BUTTON DATA-API
+  // ===============
+
+  $(document).on('click.bs.button.data-api', '[data-toggle^=button]', function (e) {
+    var $btn = $(e.target)
+    if (!$btn.hasClass('btn')) $btn = $btn.closest('.btn')
+    $btn.button('toggle')
+    e.preventDefault()
+  })
+
+}(window.jQuery);
+
 (function() {
   Bootstrap.BsButtonComponent = Ember.Component.extend(Bootstrap.TypeSupport, Bootstrap.SizeSupport, {
     layoutName: 'components/bs-button',
@@ -15963,14 +16425,14 @@ helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
 function program1(depth0,data) {
   
   var buffer = '', stack1, hashContexts, hashTypes, options;
-  data.buffer.push("\r\n    <i ");
+  data.buffer.push("\n    <i ");
   hashContexts = {'class': depth0};
   hashTypes = {'class': "STRING"};
   options = {hash:{
     'class': ("icon")
   },contexts:[],types:[],hashContexts:hashContexts,hashTypes:hashTypes,data:data};
   data.buffer.push(escapeExpression(((stack1 = helpers['bind-attr'] || depth0['bind-attr']),stack1 ? stack1.call(depth0, options) : helperMissing.call(depth0, "bind-attr", options))));
-  data.buffer.push("></i>\r\n");
+  data.buffer.push("></i>\n");
   return buffer;
   }
 
@@ -15978,7 +16440,7 @@ function program1(depth0,data) {
   hashContexts = {};
   stack1 = helpers['if'].call(depth0, "icon", {hash:{},inverse:self.noop,fn:self.program(1, program1, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  data.buffer.push("\r\n");
+  data.buffer.push("\n");
   hashTypes = {};
   hashContexts = {};
   data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "title", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
@@ -16059,7 +16521,7 @@ helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
 function program1(depth0,data) {
   
   var buffer = '', stack1, hashContexts, hashTypes, options;
-  data.buffer.push("\r\n    ");
+  data.buffer.push("\n    ");
   hashContexts = {'progress': depth0,'type': depth0};
   hashTypes = {'progress': "ID",'type': "ID"};
   options = {hash:{
@@ -16067,18 +16529,18 @@ function program1(depth0,data) {
     'type': ("type")
   },contexts:[],types:[],hashContexts:hashContexts,hashTypes:hashTypes,data:data};
   data.buffer.push(escapeExpression(((stack1 = helpers['bs-progressbar'] || depth0['bs-progressbar']),stack1 ? stack1.call(depth0, options) : helperMissing.call(depth0, "bs-progressbar", options))));
-  data.buffer.push("\r\n");
+  data.buffer.push("\n");
   return buffer;
   }
 
 function program3(depth0,data) {
   
   var buffer = '', hashTypes, hashContexts;
-  data.buffer.push("\r\n    ");
+  data.buffer.push("\n    ");
   hashTypes = {};
   hashContexts = {};
   data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "yield", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push("\r\n");
+  data.buffer.push("\n");
   return buffer;
   }
 
@@ -16885,13 +17347,11 @@ Modal component.
       }
     },
     becameVisible: function() {
-      Em.$('body').addClass('modal-open');
       if (this.get("backdrop")) {
         return this.appendBackdrop();
       }
     },
     becameHidden: function() {
-      Em.$('body').removeClass('modal-open');
       if (this._backdrop) {
         return this._backdrop.remove();
       }
@@ -16933,7 +17393,6 @@ Modal component.
     },
     willDestroyElement: function() {
       var name;
-      Em.$('body').removeClass('modal-open');
       this.removeHandlers();
       name = this.get('name');
       if (name == null) {
@@ -16957,8 +17416,6 @@ Modal component.
       return this._keyUpHandler = handler;
     }
   });
-
-  Ember.Handlebars.helper('bs-modal', Bootstrap.BsModalComponent);
 
   /*
   Bootstrap.BsModalComponent = Bootstrap.BsModalComponent.reopenClass(
@@ -17059,12 +17516,13 @@ Modal component.
     }
   });
 
-  /*Ember.Application.initializer
-      name: 'bs-modal'
-      initialize: (container, application) ->
-          container.register 'component:bs-modal', Bootstrap.BsModalComponent
-  */
-
+  Ember.Application.initializer({
+    name: 'bs-modal',
+    initialize: function(container, application) {
+      container.register('component:bs-modal', Bootstrap.BsModalComponent);
+      return container.register('component:bu-modal', Bootstrap.BsModalComponent);
+    }
+  });
 
 }).call(this);
 
@@ -17079,43 +17537,43 @@ helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
 function program1(depth0,data) {
   
   var buffer = '', stack1, hashContexts, hashTypes, options;
-  data.buffer.push("\r\n                    <i ");
+  data.buffer.push("\n                    <i ");
   hashContexts = {'class': depth0};
   hashTypes = {'class': "STRING"};
   options = {hash:{
     'class': ("titleIconClasses")
   },contexts:[],types:[],hashContexts:hashContexts,hashTypes:hashTypes,data:data};
   data.buffer.push(escapeExpression(((stack1 = helpers['bind-attr'] || depth0['bind-attr']),stack1 ? stack1.call(depth0, options) : helperMissing.call(depth0, "bind-attr", options))));
-  data.buffer.push("></i>\r\n                ");
+  data.buffer.push("></i>\n                ");
   return buffer;
   }
 
 function program3(depth0,data) {
   
   var buffer = '', hashTypes, hashContexts;
-  data.buffer.push("\r\n                ");
+  data.buffer.push("\n                ");
   hashTypes = {};
   hashContexts = {};
   data.buffer.push(escapeExpression(helpers.view.call(depth0, "view.body", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push("\r\n            ");
+  data.buffer.push("\n            ");
   return buffer;
   }
 
 function program5(depth0,data) {
   
   var buffer = '', hashTypes, hashContexts;
-  data.buffer.push("\r\n                ");
+  data.buffer.push("\n                ");
   hashTypes = {};
   hashContexts = {};
   data.buffer.push(escapeExpression(helpers._triageMustache.call(depth0, "yield", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push("\r\n            ");
+  data.buffer.push("\n            ");
   return buffer;
   }
 
 function program7(depth0,data) {
   
   var buffer = '', stack1, hashContexts, hashTypes, options;
-  data.buffer.push("\r\n                ");
+  data.buffer.push("\n                ");
   hashContexts = {'content': depth0,'targetObjectBinding': depth0};
   hashTypes = {'content': "ID",'targetObjectBinding': "STRING"};
   options = {hash:{
@@ -17123,49 +17581,49 @@ function program7(depth0,data) {
     'targetObjectBinding': ("view.targetObject")
   },contexts:[],types:[],hashContexts:hashContexts,hashTypes:hashTypes,data:data};
   data.buffer.push(escapeExpression(((stack1 = helpers['bs-button'] || depth0['bs-button']),stack1 ? stack1.call(depth0, options) : helperMissing.call(depth0, "bs-button", options))));
-  data.buffer.push("\r\n            ");
+  data.buffer.push("\n            ");
   return buffer;
   }
 
 function program9(depth0,data) {
   
   var buffer = '', hashTypes, hashContexts;
-  data.buffer.push("\r\n                ");
+  data.buffer.push("\n                ");
   hashTypes = {};
   hashContexts = {};
   data.buffer.push(escapeExpression(helpers.view.call(depth0, "", {hash:{},contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push("\r\n            ");
+  data.buffer.push("\n            ");
   return buffer;
   }
 
-  data.buffer.push("<div class=\"modal-dialog\">\r\n    <div class=\"modal-content\">\r\n        <div class=\"modal-header\">\r\n            <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\r\n            <h4 class=\"modal-title\">\r\n                ");
+  data.buffer.push("<div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n        <div class=\"modal-header\">\n            <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n            <h4 class=\"modal-title\">\n                ");
   hashTypes = {};
   hashContexts = {};
   stack1 = helpers['if'].call(depth0, "titleIconClasses", {hash:{},inverse:self.noop,fn:self.program(1, program1, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  data.buffer.push("\r\n                ");
+  data.buffer.push("\n                ");
   hashContexts = {'unescaped': depth0};
   hashTypes = {'unescaped': "STRING"};
   stack1 = helpers._triageMustache.call(depth0, "title", {hash:{
     'unescaped': ("true")
   },contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  data.buffer.push("\r\n            </h4>\r\n        </div>\r\n        <div class=\"modal-body\">\r\n            ");
+  data.buffer.push("\n            </h4>\n        </div>\n        <div class=\"modal-body\">\n            ");
   hashTypes = {};
   hashContexts = {};
   stack1 = helpers['if'].call(depth0, "body", {hash:{},inverse:self.program(5, program5, data),fn:self.program(3, program3, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  data.buffer.push("\r\n        </div>\r\n        <div class=\"modal-footer\">\r\n            ");
+  data.buffer.push("\n        </div>\n        <div class=\"modal-footer\">\n            ");
   hashTypes = {};
   hashContexts = {};
   stack1 = helpers.each.call(depth0, "footerButtons", {hash:{},inverse:self.noop,fn:self.program(7, program7, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  data.buffer.push("\r\n            ");
+  data.buffer.push("\n            ");
   hashTypes = {};
   hashContexts = {};
   stack1 = helpers.each.call(depth0, "footerViews", {hash:{},inverse:self.noop,fn:self.program(9, program9, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
-  data.buffer.push("\r\n        </div>\r\n    </div>\r\n</div>");
+  data.buffer.push("\n        </div>\n    </div>\n</div>");
   return buffer;
   
 });
@@ -17429,9 +17887,9 @@ function program9(depth0,data) {
 }).call(this);
 
 /**
-* @version: 1.3.12
+* @version: 1.3.13
 * @author: Dan Grossman http://www.dangrossman.info/
-* @date: 2014-08-18
+* @date: 2014-09-04
 * @copyright: Copyright (c) 2012-2014 Dan Grossman. All rights reserved.
 * @license: Licensed under Apache License v2.0. See http://www.apache.org/licenses/LICENSE-2.0
 * @website: http://www.improvely.com/
@@ -17697,6 +18155,9 @@ function program9(depth0,data) {
 
             if (typeof options.singleDatePicker === 'boolean') {
                 this.singleDatePicker = options.singleDatePicker;
+                if (this.singleDatePicker) {
+                    this.endDate = this.startDate.clone();
+                }
             }
 
             if (typeof options.timePicker === 'boolean') {
@@ -17787,14 +18248,20 @@ function program9(depth0,data) {
             }
 
             if (this.singleDatePicker) {
-                this.opens = 'right';
+            	this.opens = 'right';
+            	this.container.addClass('single');
                 this.container.find('.calendar.right').show();
                 this.container.find('.calendar.left').hide();
-                this.container.find('.ranges').hide();
+                if (!this.timePicker) {
+	                this.container.find('.ranges').hide();
+                } else {
+                	this.container.find('.ranges .daterangepicker_start_input, .ranges .daterangepicker_end_input').hide();
+                }
                 if (!this.container.find('.calendar.right').hasClass('single'))
                     this.container.find('.calendar.right').addClass('single');
             } else {
-                this.container.find('.calendar.right').removeClass('single');
+            	this.container.removeClass('single');
+            	this.container.find('.calendar.right').removeClass('single');
                 this.container.find('.ranges').show();
             }
 
@@ -18056,7 +18523,7 @@ function program9(depth0,data) {
         // when a date is typed into the start to end date textboxes
         inputsChanged: function (e) {
             var el = $(e.target);
-            var date = moment(el.val());
+            var date = moment(el.val(), this.format);
             if (!date.isValid()) return;
 
             var startDate, endDate;
@@ -18081,7 +18548,7 @@ function program9(depth0,data) {
             if (this.element.is('input') && !this.singleDatePicker) {
                 this.element.val(this.startDate.format(this.format) + this.separator + this.endDate.format(this.format));
             } else if (this.element.is('input')) {
-                this.element.val(this.startDate.format(this.format));
+            	this.element.val(this.endDate.format(this.format));
             }
         },
 
@@ -18201,7 +18668,7 @@ function program9(depth0,data) {
             if (!this.timePicker)
                 endDate.endOf('day');
 
-            if (this.singleDatePicker)
+            if (this.singleDatePicker && !this.timePicker)
                 this.clickApply();
         },
 
@@ -18271,12 +18738,8 @@ function program9(depth0,data) {
             this.leftCalendar.calendar = this.buildCalendar(this.leftCalendar.month.month(), this.leftCalendar.month.year(), this.leftCalendar.month.hour(), this.leftCalendar.month.minute(), 'left');
             this.rightCalendar.calendar = this.buildCalendar(this.rightCalendar.month.month(), this.rightCalendar.month.year(), this.rightCalendar.month.hour(), this.rightCalendar.month.minute(), 'right');
             this.container.find('.calendar.left').empty().html(this.renderCalendar(this.leftCalendar.calendar, this.startDate, this.minDate, this.maxDate));
+            this.container.find('.calendar.right').empty().html(this.renderCalendar(this.rightCalendar.calendar, this.endDate, this.singleDatePicker ? this.minDate : this.startDate, this.maxDate));
             
-            var minDate = this.minDate;
-            if (!this.singleDatePicker)
-                minDate = this.startDate;
-            this.container.find('.calendar.right').empty().html(this.renderCalendar(this.rightCalendar.calendar, this.endDate, minDate, this.maxDate));
-
             this.container.find('.ranges li').removeClass('active');
             var customRange = true;
             var i = 0;
@@ -38759,7 +39222,7 @@ $.widget( "ui.tooltip", {
 })(jQuery);
 
 /*!
-* ember-table v0.2.1
+* ember-table v0.2.2
 * Copyright 2012-2014 Addepar Inc.
 * See LICENSE.
 */
@@ -38895,7 +39358,7 @@ helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
 
 
   data.buffer.push("<div class=\"ember-table-content-container\" ");
-  data.buffer.push(escapeExpression(helpers.action.call(depth0, "sortByColumn", "view.content", {hash:{},hashTypes:{},hashContexts:{},contexts:[depth0,depth0],types:["ID","ID"],data:data})));
+  data.buffer.push(escapeExpression(helpers.action.call(depth0, "sortByColumn", "view.content", {hash:{},hashTypes:{},hashContexts:{},contexts:[depth0,depth0],types:["STRING","ID"],data:data})));
   data.buffer.push(">\n  <span class=\"ember-table-content\">\n    ");
   stack1 = helpers._triageMustache.call(depth0, "view.content.headerCellName", {hash:{},hashTypes:{},hashContexts:{},contexts:[depth0],types:["ID"],data:data});
   if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
@@ -39004,7 +39467,7 @@ helpers = this.merge(helpers, Ember.Handlebars.helpers); data = data || {};
 
 Ember.Table = Ember.Namespace.create();
 
-Ember.Table.VERSION = '0.2.1';
+Ember.Table.VERSION = '0.2.2';
 
 if ((_ref = Ember.libraries) != null) {
   _ref.register('Ember Table', Ember.Table.VERSION);
@@ -39077,13 +39540,13 @@ Ember.AddeparMixins.StyleBindingsMixin = Ember.Mixin.create({
   createStyleString: function(styleName, property) {
     var value;
     value = this.get(property);
-    if (value === void 0) {
+    if (Ember.isNone(value)) {
       return;
     }
     if (Ember.typeOf(value) === 'number') {
       value = value + this.get('unitType');
     }
-    return "" + styleName + ":" + value + ";";
+    return Ember.String.dasherize("" + styleName) + ":" + value + ";";
   },
   applyStyleBindings: function() {
     var lookup, properties, styleBindings, styleComputed, styles,
@@ -39189,7 +39652,14 @@ Ember.LazyContainerView = Ember.ContainerView.extend(Ember.AddeparMixins.StyleBi
   onNumChildViewsDidChange: Ember.observer(function() {
     var itemViewClass, newNumViews, numViewsToInsert, oldNumViews, view, viewsToAdd, viewsToRemove, _i, _results;
     view = this;
-    itemViewClass = Ember.get(this.get('itemViewClass'));
+    itemViewClass = this.get('itemViewClass');
+    if (typeof itemViewClass === 'string') {
+      if (/[A-Z]+/.exec(itemViewClass)) {
+        itemViewClass = Ember.get(Ember.lookup, itemViewClass);
+      } else {
+        itemViewClass = this.container.lookupFactory("view:" + itemViewClass);
+      }
+    }
     newNumViews = this.get('numChildViews');
     if (!(itemViewClass && newNumViews)) {
       return;
@@ -39283,7 +39753,11 @@ Ember.MultiItemViewCollectionView = Ember.CollectionView.extend(Ember.AddeparMix
     itemViewClassField = this.get('itemViewClassField');
     itemViewClass = attrs.content.get(itemViewClassField);
     if (typeof itemViewClass === 'string') {
-      itemViewClass = Ember.get(Ember.lookup, itemViewClass);
+      if (/[A-Z]+/.exec(itemViewClass)) {
+        itemViewClass = Ember.get(Ember.lookup, itemViewClass);
+      } else {
+        itemViewClass = this.container.lookupFactory("view:" + itemViewClass);
+      }
     }
     return this._super(itemViewClass, attrs);
   }
@@ -39424,8 +39898,10 @@ Ember.Table.ColumnDefinition = Ember.Object.extend({
   isSortable: true,
   textAlign: 'text-align-right',
   canAutoResize: true,
-  headerCellViewClass: 'Ember.Table.HeaderCell',
-  tableCellViewClass: 'Ember.Table.TableCell',
+  headerCellView: 'Ember.Table.HeaderCell',
+  headerCellViewClass: Ember.computed.alias('headerCellView'),
+  tableCellView: 'Ember.Table.TableCell',
+  tableCellViewClass: Ember.computed.alias('tableCellView'),
   resize: function(width) {
     return this.set('columnWidth', width);
   },
@@ -39475,9 +39951,12 @@ Ember.Table.Row = Ember.ObjectProxy.extend({
   * @instance
   */
 
-  isSelected: Ember.computed(function() {
-    return this.get('parentController.selection') === this.get('content');
-  }).property('parentController.selection', 'content'),
+  isSelected: Ember.computed(function(key, val) {
+    if (arguments.length > 1) {
+      this.get('parentController').setSelected(this, val);
+    }
+    return this.get('parentController').isSelected(this);
+  }).property('parentController._selection.[]'),
   /**
   * Is Showing?
   * @memberof Ember.Table.Row
@@ -40081,8 +40560,41 @@ Ember.Table.EmberTableComponent = Ember.Component.extend(Ember.AddeparMixins.Sty
   forceFillColumns: false,
   enableColumnReorder: true,
   enableContentSelection: false,
-  selection: null,
-  tableRowViewClass: 'Ember.Table.TableRow',
+  persistedSelection: Ember.computed(function() {
+    return new Ember.Set();
+  }),
+  rangeSelection: Ember.computed(function() {
+    return new Ember.Set();
+  }),
+  selectionMode: 'single',
+  _selection: Ember.computed(function() {
+    return this.get('persistedSelection').copy().addEach(this.get('rangeSelection'));
+  }).property('persistedSelection.[]', 'rangeSelection.[]'),
+  selection: Ember.computed(function(key, val) {
+    var content, _i, _len, _ref, _ref1;
+    if (arguments.length > 1 && val) {
+      if (this.get('selectionMode') === 'single') {
+        this.get('persistedSelection').clear();
+        this.get('persistedSelection').add(this.findRow(val));
+      } else {
+        this.get('persistedSelection').clear();
+        for (_i = 0, _len = val.length; _i < _len; _i++) {
+          content = val[_i];
+          this.get('persistedSelection').add(this.findRow(content));
+        }
+      }
+      this.get('rangeSelection').clear();
+    }
+    if (this.get('selectionMode') === 'single') {
+      return (_ref = this.get('_selection')) != null ? (_ref1 = _ref[0]) != null ? _ref1.get('content') : void 0 : void 0;
+    } else {
+      return this.get('_selection').toArray().map(function(row) {
+        return row.get('content');
+      });
+    }
+  }).property('_selection.[]', 'selectionMode'),
+  tableRowView: 'Ember.Table.TableRow',
+  tableRowViewClass: Ember.computed.alias('tableRowView'),
   init: function() {
     this._super();
     if (!$.ui) {
@@ -40193,7 +40705,7 @@ Ember.Table.EmberTableComponent = Ember.Component.extend(Ember.AddeparMixins.Sty
   */
 
   elementSizeDidChange: function() {
-    if (this.get('state') !== 'inDOM') {
+    if ((this.get('_state') || this.get('state')) !== 'inDOM') {
       return;
     }
     this.set('_width', this.$().parent().outerWidth());
@@ -40201,7 +40713,7 @@ Ember.Table.EmberTableComponent = Ember.Component.extend(Ember.AddeparMixins.Sty
     return Ember.run.next(this, this.updateLayout);
   },
   updateLayout: function() {
-    if (this.get('state') !== 'inDOM') {
+    if ((this.get('_state') || this.get('state')) !== 'inDOM') {
       return;
     }
     this.$('.antiscroll-wrap').antiscroll().data('antiscroll').rebuild();
@@ -40438,13 +40950,70 @@ Ember.Table.EmberTableComponent = Ember.Component.extend(Ember.AddeparMixins.Sty
       return total + w;
     }), 0);
   },
+  isSelected: function(row) {
+    return this.get('_selection').contains(row);
+  },
+  setSelected: function(row, val) {
+    this.persistSelection();
+    if (val) {
+      return this.get('persistedSelection').add(row);
+    } else {
+      return this.get('persistedSelection').remove(row);
+    }
+  },
   click: function(event) {
-    var row;
+    var curIndex, lastIndex, maxIndex, minIndex, row;
     row = this.getRowForEvent(event);
     if (!row) {
       return;
     }
-    return this.set('selection', row.get('content'));
+    if (this.get('selectionMode') === 'none') {
+      return;
+    }
+    if (this.get('selectionMode') === 'single') {
+      this.get('persistedSelection').clear();
+      return this.get('persistedSelection').add(row);
+    } else {
+      if (event.shiftKey) {
+        this.get('rangeSelection').clear();
+        lastIndex = this.rowIndex(this.get('lastSelected'));
+        curIndex = this.rowIndex(this.getRowForEvent(event));
+        minIndex = Math.min(lastIndex, curIndex);
+        maxIndex = Math.max(lastIndex, curIndex);
+        return this.get('rangeSelection').addObjects(this.get('bodyContent').slice(minIndex, maxIndex + 1));
+      } else {
+        if (!event.ctrlKey && !event.metaKey) {
+          this.get('persistedSelection').clear();
+          this.get('rangeSelection').clear();
+        } else {
+          this.persistSelection();
+        }
+        if (this.get('persistedSelection').contains(row)) {
+          this.get('persistedSelection').remove(row);
+        } else {
+          this.get('persistedSelection').add(row);
+        }
+        return this.set('lastSelected', row);
+      }
+    }
+  },
+  findRow: function(content) {
+    var row, _i, _len, _ref;
+    _ref = this.get('bodyContent');
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      row = _ref[_i];
+      if (row.get('content') === content) {
+        return row;
+      }
+    }
+  },
+  rowIndex: function(row) {
+    var _ref;
+    return (_ref = this.get('bodyContent')) != null ? _ref.indexOf(row) : void 0;
+  },
+  persistSelection: function() {
+    this.get('persistedSelection').addEach(this.get('rangeSelection'));
+    return this.get('rangeSelection').clear();
   },
   getRowForEvent: function(event) {
     var $rowView, view;
