@@ -17389,7 +17389,7 @@ Modal component.
       } else {
         this.hide();
       }
-      return this.trigger('closed');
+      return this.sendAction('closed');
     },
     willDestroyElement: function() {
       var name;
